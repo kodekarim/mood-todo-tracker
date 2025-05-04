@@ -1,0 +1,458 @@
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    margin: 20px;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+}
+
+/* --- Bento Grid Layout --- */
+.container {
+    display: grid;
+    /* Adjust grid columns for Bento layout */
+    grid-template-columns: repeat(2, 1fr); /* Two equal columns */
+    grid-template-rows: auto auto auto; /* Define rows for content */
+    grid-template-areas:
+        "todo todo"
+        "mood state"
+        "notes notes"
+        "dash dash";
+    gap: 20px;
+    max-width: 900px; /* Adjust max-width for better Bento feel */
+    margin: 20px auto;
+    background-color: transparent; /* Remove container background */
+    padding: 0; /* Remove container padding */
+    box-shadow: none; /* Remove container shadow */
+}
+
+.mood-section, .state-section, .todo-section, .notes-section, .dashboard-section {
+    padding: 20px; /* Increase padding within boxes */
+    border: none; /* Remove default border */
+    border-radius: 12px; /* More pronounced rounding */
+    background-color: #fff; /* White background for boxes */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Subtle shadow for depth */
+    /* Remove border: 1px solid #ddd; */
+}
+
+/* Assign grid areas */
+.mood-section { grid-area: mood; }
+.state-section { grid-area: state; }
+.todo-section { grid-area: todo; }
+.notes-section { grid-area: notes; } /* Assign area for notes */
+.dashboard-section { grid-area: dash; }
+/* --- End Bento Grid Layout --- */
+
+h2 {
+    margin-top: 0;
+    color: #555;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+
+input[type="text"], input[type="number"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    padding: 10px 15px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+
+button:hover {
+    background-color: #4cae4c;
+}
+
+#add-todo {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+#todo-list {
+    list-style: none;
+    padding: 0;
+}
+
+#todo-list li {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#todo-list li.completed span {
+    text-decoration: line-through;
+    color: grey;
+}
+
+#todo-list li button {
+    background-color: #d9534f;
+    padding: 5px 10px;
+    font-size: 0.8em;
+}
+
+#todo-list li button:hover {
+    background-color: #c9302c;
+}
+
+.chart-container {
+    position: relative;
+    height: 250px;
+    width: 100%;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Mood specific */
+/* Remove old input styling */
+.mood-options {
+    margin-bottom: 15px;
+}
+
+.mood-btn {
+    padding: 8px 12px;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    margin-right: 5px;
+    border-radius: 5px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.mood-btn:hover {
+    background-color: #ddd;
+}
+
+.mood-btn.selected {
+    background-color: #f0ad4e; /* Highlight color */
+    border-color: #eea236;
+    color: white;
+}
+
+/* Remove old mood button styling */
+
+.mood-section p {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr; /* Stack sections vertically */
+        grid-template-rows: auto auto auto auto; /* Adjust rows */
+        grid-template-areas:
+            "todo"
+            "mood"
+            "state"
+            "notes"
+            "dash";
+        max-width: 95%; /* Use more width on smaller screens */
+    }
+    .date-navigation {
+        flex-wrap: wrap; /* Allow wrapping on small screens */
+    }
+}
+
+.date-navigation {
+    text-align: center;
+    margin-bottom: 0; /* Reset margin */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.date-navigation h2 {
+    margin: 0;
+    border-bottom: none; /* Remove border from date heading */
+    color: #333;
+}
+
+.date-navigation button {
+    background-color: #6c757d;
+}
+
+.date-navigation button:hover {
+    background-color: #5a6268;
+}
+
+/* State Section Specific Styling */
+.state-options {
+    margin-bottom: 15px;
+}
+
+.state-btn {
+    padding: 8px 12px;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    margin-right: 5px;
+    border-radius: 5px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.state-btn:hover {
+    background-color: #ddd;
+}
+
+.state-btn.selected {
+    background-color: #337ab7; /* Different highlight for state */
+    border-color: #2e6da4;
+    color: white;
+}
+
+.state-section p {
+    margin-top: 15px;
+    font-weight: bold;
+}
+/* --- End State Section --- */
+
+/* --- Todo Section Specific Styling --- */
+.todo-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two equal columns */
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.todo-column h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #666;
+    text-align: center;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 5px;
+}
+
+.todo-list {
+    list-style: none;
+    padding: 0;
+    min-height: 50px; /* Ensure columns have some height even when empty */
+}
+
+.todo-list li {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    word-break: break-word; /* Prevent long words from overflowing */
+}
+
+.todo-list li .todo-content {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Space between checkbox and text */
+    flex-grow: 1; /* Allow content to take available space */
+}
+
+.todo-list li input[type="checkbox"] {
+    cursor: pointer;
+    /* Optional: custom checkbox styling could go here */
+}
+
+/* Style for completed items (applies to li in #completed-list) */
+#completed-list li .todo-text {
+    text-decoration: line-through;
+    color: grey;
+}
+
+/* Remove old completed span style */
+/* #todo-list li.completed span { ... } */
+
+.todo-list li button {
+    background-color: #d9534f;
+    padding: 5px 8px; /* Slightly smaller padding */
+    font-size: 0.8em;
+    margin-left: 8px; /* Add space between text and button */
+    flex-shrink: 0; /* Prevent delete button from shrinking */
+}
+
+.todo-list li button:hover {
+    background-color: #c9302c;
+}
+/* --- End Todo Section Specific Styling --- */
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr; /* Stack sections vertically */
+        grid-template-rows: auto auto auto auto; /* Adjust rows */
+        grid-template-areas:
+            "todo"
+            "mood"
+            "state"
+            "notes"
+            "dash";
+        max-width: 95%; /* Use more width on smaller screens */
+    }
+    .todo-columns {
+        grid-template-columns: 1fr; /* Stack columns on small screens */
+    }
+    .date-navigation {
+        flex-wrap: wrap; /* Allow wrapping on small screens */
+    }
+}
+
+/* --- Notes Section Specific Styling --- */
+.notes-section textarea {
+    width: 100%;
+    min-height: 100px; /* Give it some initial height */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit; /* Use the body font */
+    font-size: 1em;
+    line-height: 1.5;
+    resize: vertical; /* Allow vertical resizing */
+    box-sizing: border-box; /* Include padding and border in width */
+}
+/* --- End Notes Section Specific Styling --- */
+
+/* --- Calendar Section Specific Styling --- */
+.calendar-section {
+    max-width: 900px;
+    margin: 30px auto 20px auto;
+    padding: 15px; /* Reduced padding */
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    text-align: center;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr); /* 7 days a week */
+    gap: 4px; /* Reduced gap */
+}
+
+.calendar-grid div {
+    padding: 4px; /* Significantly reduced padding */
+    text-align: center;
+    border: 1px solid #f0f0f0; /* Lighter border */
+    border-radius: 4px;
+    min-height: auto; /* Remove min-height */
+    font-size: 0.8em; /* Smaller font */
+    cursor: pointer;
+    position: relative; /* For indicator positioning */
+    transition: background-color 0.2s;
+}
+
+.calendar-grid .empty-day {
+    background-color: #f8f9fa;
+    cursor: default;
+    border-color: transparent; /* Make empty border invisible */
+}
+
+.calendar-grid .day-cell:hover:not(.empty-day):not(.day-header) {
+    background-color: #e9ecef;
+}
+
+/* Indicator for logged days - make it a background highlight */
+.calendar-grid .has-log {
+    background-color: rgba(40, 167, 69, 0.2); /* Light green background */
+}
+.calendar-grid .has-log::after {
+     display: none; /* Remove the dot */
+}
+
+/* Highlight for selected day */
+.calendar-grid .selected-day {
+    background-color: #007bff !important;
+    color: white;
+    font-weight: bold;
+    border-color: #0056b3;
+}
+
+/* Restore calendar nav styling */
+.calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 0 10px;
+}
+
+.calendar-nav span {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.calendar-nav button {
+    background-color: #6c757d;
+    padding: 5px 10px;
+}
+
+.calendar-nav button:hover {
+    background-color: #5a6268;
+}
+
+/* --- End Calendar Section Specific Styling --- */
+
+/* --- Top Controls (Date Nav + Import/Export) --- */
+.top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 900px;
+    margin: 0 auto 20px auto;
+    flex-wrap: wrap; /* Allow wrapping */
+    gap: 10px 20px; /* Row and column gap */
+}
+
+.import-export button {
+    padding: 8px 12px;
+    background-color: #17a2b8; /* Teal color */
+    margin-left: 5px;
+}
+
+.import-export button:hover {
+    background-color: #138496;
+}
+/* --- End Top Controls --- */
+
+.container {
+    .top-controls {
+        justify-content: center; /* Center items when wrapped */
+    }
+}
+
+/* --- Dashboard Specific --- */
+.chart-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap; /* Allow wrapping */
+}
+
+.chart-controls label {
+    margin-bottom: 0; /* Override default label margin */
+    font-weight: normal;
+}
+
+.chart-controls input[type="date"] {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+/* --- End Dashboard Specific --- */ 

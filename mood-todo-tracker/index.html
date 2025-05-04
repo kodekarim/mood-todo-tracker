@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Daily Tracker</h1>
+
+    <div class="top-controls">
+        <div class="date-navigation">
+            <button id="prev-day">&lt; Prev Day</button>
+            <h2 id="current-date"></h2>
+            <button id="next-day">Next Day &gt;</button>
+        </div>
+        <div class="import-export">
+            <button id="export-data">Export Data</button>
+            <button id="import-data">Import Data</button>
+            <input type="file" id="import-file-input" accept=".json" style="display: none;">
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="mood-section">
+            <h2>Today's Mood</h2>
+            <div id="mood-options" class="mood-options">
+                <button class="mood-btn" data-mood="Angry">Angry</button>
+                <button class="mood-btn" data-mood="Sad">Sad</button>
+                <button class="mood-btn" data-mood="Neutral">Neutral</button>
+                <button class="mood-btn" data-mood="Happy">Happy</button>
+                <button class="mood-btn" data-mood="Excited">Excited</button>
+            </div>
+            <p>Current Mood: <span id="display-mood">N/A</span></p>
+        </div>
+
+        <div class="state-section">
+            <h2>Mental State</h2>
+            <div id="mental-state-options" class="state-options">
+                <button class="state-btn" data-state="Sick">Sick</button>
+                <button class="state-btn" data-state="Meh">Meh</button>
+                <button class="state-btn" data-state="Neutral">Neutral</button>
+                <button class="state-btn" data-state="Focused">Focused</button>
+            </div>
+            <p>Current Mental State: <span id="display-mental-state">N/A</span></p>
+        </div>
+
+        <div class="todo-section">
+            <h2>Today's Todos</h2>
+            <input type="text" id="todo-input" placeholder="Add a new todo...">
+            <button id="add-todo">Add Todo</button>
+            
+            <div class="todo-columns">
+                <div class="todo-column">
+                    <h3>Pending</h3>
+                    <ul id="pending-list" class="todo-list"></ul>
+                </div>
+                <div class="todo-column">
+                    <h3>Completed</h3>
+                    <ul id="completed-list" class="todo-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="notes-section">
+            <h2>Daily Notes</h2>
+            <textarea id="daily-notes" placeholder="Jot down your thoughts for the day..."></textarea>
+        </div>
+
+        <div class="dashboard-section">
+            <h2>Dashboard</h2>
+            <div class="chart-controls">
+                <label for="chart-start-date">Start Date:</label>
+                <input type="date" id="chart-start-date">
+                <label for="chart-end-date">End Date:</label>
+                <input type="date" id="chart-end-date">
+            </div>
+            <p>Daily Trends (<span id="chart-date-range-display"></span>)</p>
+            <div class="chart-container">
+                 <canvas id="progress-chart"></canvas>
+            </div>
+            <p>Tasks on <span id="selected-date-display"></span>: Completed: <span id="completed-count">0</span> / <span id="total-count">0</span></p>
+        </div>
+    </div>
+
+    <div class="calendar-section">
+        <h2>Activity Calendar</h2>
+        <div class="calendar-nav">
+            <button id="prev-month">&lt; Prev</button>
+            <span id="calendar-month-year">Month Year</span>
+            <button id="next-month">Next &gt;</button>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
