@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mappings for chart data
     const moodMap = { 'Angry': 1, 'Sad': 2, 'Neutral': 3, 'Happy': 4, 'Excited': 5 };
-    const mentalStateMap = { 'Sick': 1, 'Meh': 2, 'Neutral': 3, 'Focused': 4 };
+    const mentalStateMap = { 'Sick': 1, 'Meh': 2, 'Overthinking': 3, 'Neutral': 4, 'Focused': 5 };
 
     // Format date object to YYYY-MM-DD string
     function formatDateKey(date) {
@@ -188,8 +188,45 @@ document.addEventListener('DOMContentLoaded', () => {
         const span = document.createElement('span');
         span.className = 'todo-text'; // Add class for potential styling
         span.textContent = todo.text;
-        // Remove old text click listener
-        // span.addEventListener('click', () => toggleTodo(index));
+
+        // Make text editable on click
+        span.addEventListener('click', () => {
+            // Ensure other editable spans are blurred first if any
+            document.querySelectorAll('.todo-text[contenteditable="true"]').forEach(s => {
+                if (s !== span) s.blur();
+            });
+
+            span.contentEditable = true;
+            span.focus();
+            // Optional: Select all text when starting edit
+            // const range = document.createRange();
+            // range.selectNodeContents(span);
+            // const sel = window.getSelection();
+            // sel.removeAllRanges();
+            // sel.addRange(range);
+        });
+
+        span.addEventListener('blur', () => {
+            span.contentEditable = false;
+            const newText = span.textContent.trim();
+            if (newText !== todo.text && newText !== '') {
+                updateTodoText(index, newText);
+            } else if (newText === '') {
+                // Restore original text if user cleared it
+                span.textContent = todo.text;
+            }
+            // If newText === todo.text, no action needed.
+        });
+
+        span.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Prevent newline in contentEditable
+                span.blur(); // Trigger blur to save
+            } else if (e.key === 'Escape') {
+                span.textContent = todo.text; // Restore original text
+                span.blur(); // Trigger blur (will not save as text is original)
+            }
+        });
 
         contentDiv.appendChild(checkbox);
         contentDiv.appendChild(span);
@@ -233,6 +270,21 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTodos(updatedTodos); // Re-render both lists to move item
             updateCounts(updatedTodos); // Update counts
             renderChart(); // Update chart data
+        }
+    }
+
+    // Update the text of a specific todo
+    function updateTodoText(index, newText) {
+        const dateKey = formatDateKey(selectedDate);
+        const currentData = getDataForDate(dateKey);
+        const updatedTodos = [...currentData.todos];
+
+        if (updatedTodos[index]) {
+            updatedTodos[index].text = newText;
+            updateDataForSelectedDate({ todos: updatedTodos });
+            renderTodos(updatedTodos);
+            updateCounts(updatedTodos);
+            // No need to call renderChart here unless task text is part of chart data
         }
     }
 
