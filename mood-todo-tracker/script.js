@@ -41,6 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartEndDateInput = document.getElementById('chart-end-date');
     const chartDateRangeDisplay = document.getElementById('chart-date-range-display');
 
+    const themeToggleButton = document.getElementById('theme-toggle');
+
     // --- State ---
     let selectedDate = new Date(); // Use Date object for easier manipulation
     let dailyData = {}; // Object to hold all data { 'YYYY-MM-DD': { todos: [], mood: '', mentalState: '', notes: '' }, ... }
@@ -656,6 +658,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Initialization ---
     loadData(); // Load all data initially
+    loadDarkModePreference(); // Load and apply dark mode preference
 
     // Initialize chart date range (e.g., last 7 days from today)
     const today = new Date();
@@ -669,4 +672,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial chart render after setting dates
     renderChart();
+
+    // --- Theme Toggle --- 
+    function applyDarkMode(isDark) {
+        if (isDark) {
+            document.body.classList.add('dark-mode');
+            themeToggleButton.textContent = 'Toggle Light Mode';
+        } else {
+            document.body.classList.remove('dark-mode');
+            themeToggleButton.textContent = 'Toggle Dark Mode';
+        }
+    }
+
+    function saveDarkModePreference(isDark) {
+        localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+    }
+
+    function loadDarkModePreference() {
+        const preference = localStorage.getItem('darkMode');
+        if (preference === 'enabled') {
+            applyDarkMode(true);
+        } else {
+            applyDarkMode(false); // Default to light mode if no preference or disabled
+        }
+    }
+
+    themeToggleButton.addEventListener('click', () => {
+        const isDarkModeEnabled = document.body.classList.contains('dark-mode');
+        applyDarkMode(!isDarkModeEnabled);
+        saveDarkModePreference(!isDarkModeEnabled);
+    });
 }); 

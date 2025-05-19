@@ -1,13 +1,143 @@
+:root {
+    --body-bg-color: #f4f4f4;
+    --text-color-primary: #333;
+    --text-color-secondary: #555;
+    --text-color-tertiary: #666;
+    --container-bg-color: #fff;
+    --container-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --border-color-light: #eee;
+    --border-color-medium: #ccc;
+    --border-color-dark: #ddd; /* Used for some section borders before removal comment */
+
+    --button-primary-bg: #5cb85c;
+    --button-primary-hover-bg: #4cae4c;
+    --button-primary-text: white;
+
+    --button-secondary-bg: #6c757d;
+    --button-secondary-hover-bg: #5a6268;
+    --button-secondary-text: white;
+
+    --button-danger-bg: #d9534f;
+    --button-danger-hover-bg: #c9302c;
+    --button-danger-text: white;
+
+    --button-mood-bg: #eee;
+    --button-mood-hover-bg: #ddd;
+    --button-mood-border: #ccc;
+    --button-mood-selected-bg: #f0ad4e;
+    --button-mood-selected-border: #eea236;
+    --button-mood-selected-text: white;
+
+    --button-state-bg: #eee;
+    --button-state-hover-bg: #ddd;
+    --button-state-border: #ccc;
+    --button-state-selected-bg: #337ab7;
+    --button-state-selected-border: #2e6da4;
+    --button-state-selected-text: white;
+
+    --button-import-export-bg: #17a2b8;
+    --button-import-export-hover-bg: #138496;
+
+    --todo-completed-text-color: grey;
+
+    --calendar-empty-day-bg: #f8f9fa;
+    --calendar-day-cell-hover-bg: #e9ecef;
+    --calendar-day-cell-border: #f0f0f0;
+    --calendar-has-log-bg: rgba(40, 167, 69, 0.2);
+    --calendar-selected-day-bg: #007bff;
+    --calendar-selected-day-text: white;
+    --calendar-selected-day-border: #0056b3;
+
+    --input-bg-color: #fff; /* Assuming inputs are on white bg */
+    --input-border-color: #ccc;
+    --input-text-color: #333; /* Default text color */
+    --textarea-bg-color: #fff;
+    --textarea-border-color: #ccc;
+    --textarea-text-color: #333;
+
+    --theme-toggle-button-bg: #007bff;
+    --theme-toggle-button-hover-bg: #0056b3;
+    --theme-toggle-button-text: white;
+}
+
+.dark-mode {
+    --body-bg-color: #121212;
+    --text-color-primary: #e0e0e0;
+    --text-color-secondary: #b0b0b0;
+    --text-color-tertiary: #999999;
+    --container-bg-color: #1e1e1e;
+    --container-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    --border-color-light: #333;
+    --border-color-medium: #555;
+    --border-color-dark: #444;
+
+    --button-primary-bg: #3a9a40;
+    --button-primary-hover-bg: #2e7d32;
+    /* --button-primary-text: white; (no change needed generally) */
+
+    --button-secondary-bg: #5a6268;
+    --button-secondary-hover-bg: #484e53;
+    /* --button-secondary-text: white; */
+
+    --button-danger-bg: #c62828;
+    --button-danger-hover-bg: #a71e1e;
+    /* --button-danger-text: white; */
+
+    --button-mood-bg: #333;
+    --button-mood-hover-bg: #444;
+    --button-mood-border: #555;
+    --button-mood-selected-bg: #d88c2a;
+    --button-mood-selected-border: #c07b20;
+    /* --button-mood-selected-text: white; */
+
+    --button-state-bg: #333;
+    --button-state-hover-bg: #444;
+    --button-state-border: #555;
+    --button-state-selected-bg: #286894;
+    --button-state-selected-border: #1e5275;
+    /* --button-state-selected-text: white; */
+
+    --button-import-export-bg: #137a8a;
+    --button-import-export-hover-bg: #0f5f6c;
+
+    --todo-completed-text-color: #777;
+
+    --calendar-empty-day-bg: #2c2c2c;
+    --calendar-day-cell-hover-bg: #383838;
+    --calendar-day-cell-border: #303030;
+    --calendar-has-log-bg: rgba(40, 167, 69, 0.3); /* Slightly adjust alpha if needed */
+    --calendar-selected-day-bg: #0056b3;
+    /* --calendar-selected-day-text: white; */
+    --calendar-selected-day-border: #00438a;
+
+    --input-bg-color: #2c2c2c;
+    --input-border-color: #555;
+    --input-text-color: #e0e0e0;
+    --textarea-bg-color: #2c2c2c;
+    --textarea-border-color: #555;
+    --textarea-text-color: #e0e0e0;
+    
+    /* Chart.js elements might need specific dark mode handling if default inversion isn't good */
+    /* For example, chart axis/label colors: */
+    /* --chart-label-color: #b0b0b0; */
+    /* --chart-grid-color: #444; */
+
+    --theme-toggle-button-bg: #0056b3; /* Darker blue for dark mode */
+    --theme-toggle-button-hover-bg: #00438a;
+}
+
 body {
     font-family: sans-serif;
     line-height: 1.6;
     margin: 20px;
-    background-color: #f4f4f4;
+    background-color: var(--body-bg-color);
+    color: var(--text-color-primary); /* Added default text color for body */
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition */
 }
 
 h1 {
     text-align: center;
-    color: #333;
+    color: var(--text-color-primary);
 }
 
 /* --- Bento Grid Layout --- */
@@ -24,7 +154,7 @@ h1 {
     gap: 20px;
     max-width: 900px; /* Adjust max-width for better Bento feel */
     margin: 20px auto;
-    background-color: transparent; /* Remove container background */
+    background-color: transparent; /* Remove container background, inherited from body or :root */
     padding: 0; /* Remove container padding */
     box-shadow: none; /* Remove container shadow */
 }
@@ -33,9 +163,10 @@ h1 {
     padding: 20px; /* Increase padding within boxes */
     border: none; /* Remove default border */
     border-radius: 12px; /* More pronounced rounding */
-    background-color: #fff; /* White background for boxes */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Subtle shadow for depth */
-    /* Remove border: 1px solid #ddd; */
+    background-color: var(--container-bg-color); /* White background for boxes */
+    box-shadow: var(--container-shadow); /* Subtle shadow for depth */
+    /* Remove border: 1px solid var(--border-color-dark); */
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Assign grid areas */
@@ -48,31 +179,43 @@ h1 {
 
 h2 {
     margin-top: 0;
-    color: #555;
-    border-bottom: 1px solid #eee;
+    color: var(--text-color-secondary);
+    border-bottom: 1px solid var(--border-color-light);
     padding-bottom: 5px;
 }
 
-input[type="text"], input[type="number"] {
+input[type="text"], input[type="number"] { /* General input styling */
     width: calc(100% - 22px);
     padding: 10px;
     margin-bottom: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--input-border-color);
     border-radius: 4px;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
+    box-sizing: border-box; /* Ensure padding doesn't expand width */
+}
+
+input[type="date"] { /* Specific for date inputs if they need separate styling */
+    padding: 5px;
+    border: 1px solid var(--input-border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg-color);
+    color: var(--input-text-color);
 }
 
 button {
     padding: 10px 15px;
-    background-color: #5cb85c;
-    color: white;
+    background-color: var(--button-primary-bg);
+    color: var(--button-primary-text);
     border: none;
     border-radius: 4px;
     cursor: pointer;
     margin-right: 5px;
+    transition: background-color 0.2s ease;
 }
 
 button:hover {
-    background-color: #4cae4c;
+    background-color: var(--button-primary-hover-bg);
 }
 
 #add-todo {
@@ -80,84 +223,96 @@ button:hover {
     margin-bottom: 15px;
 }
 
-#todo-list {
+/* This was for #todo-list, now applying to .todo-list for pending/completed */
+.todo-list {
     list-style: none;
     padding: 0;
 }
 
-#todo-list li {
+.todo-list li {
     padding: 10px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-#todo-list li.completed span {
+/* This was #todo-list li.completed span, now using class on span in completed list */
+/* This selector is more specific for completed items in #completed-list */
+#completed-list li .todo-text {
     text-decoration: line-through;
-    color: grey;
+    color: var(--todo-completed-text-color);
+}
+/* For general styling of todo text if needed, separate from completion status */
+.todo-text {
+    /* Add any general styling for todo text here if necessary */
+    /* e.g., color: var(--text-color-primary); if not inheriting correctly */
 }
 
-#todo-list li button {
-    background-color: #d9534f;
+/* This was #todo-list li button, now for general buttons inside .todo-list li */
+.todo-list li button {
+    background-color: var(--button-danger-bg);
+    color: var(--button-danger-text); /* Ensure text color is set */
     padding: 5px 10px;
     font-size: 0.8em;
 }
 
-#todo-list li button:hover {
-    background-color: #c9302c;
+.todo-list li button:hover {
+    background-color: var(--button-danger-hover-bg);
 }
 
 .chart-container {
     position: relative;
     height: 250px;
     width: 100%;
+    /* background-color: var(--container-bg-color); Ensure chart bg matches container in dark mode */
+    /* border-radius: 8px; /* Optional: if chart needs rounded corners */
 }
 
 label {
     display: block;
     margin-bottom: 5px;
     font-weight: bold;
+    color: var(--text-color-secondary); /* Labels color */
 }
 
 /* Mood specific */
-/* Remove old input styling */
 .mood-options {
     margin-bottom: 15px;
 }
 
 .mood-btn {
     padding: 8px 12px;
-    background-color: #eee;
-    border: 1px solid #ccc;
+    background-color: var(--button-mood-bg);
+    border: 1px solid var(--button-mood-border);
+    color: var(--text-color-primary); /* Text color for non-selected mood/state buttons */
     cursor: pointer;
     margin-right: 5px;
     border-radius: 5px;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .mood-btn:hover {
-    background-color: #ddd;
+    background-color: var(--button-mood-hover-bg);
 }
 
 .mood-btn.selected {
-    background-color: #f0ad4e; /* Highlight color */
-    border-color: #eea236;
-    color: white;
+    background-color: var(--button-mood-selected-bg); /* Highlight color */
+    border-color: var(--button-mood-selected-border);
+    color: var(--button-mood-selected-text);
 }
 
-/* Remove old mood button styling */
-
-.mood-section p {
+.mood-section p, .state-section p { /* Combined for consistency */
     margin-top: 15px;
     font-weight: bold;
+    color: var(--text-color-secondary);
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .container {
         grid-template-columns: 1fr; /* Stack sections vertically */
-        grid-template-rows: auto auto auto auto; /* Adjust rows */
+        grid-template-rows: auto auto auto auto; /* Define rows for content */
         grid-template-areas:
             "todo"
             "mood"
@@ -168,6 +323,24 @@ label {
     }
     .date-navigation {
         flex-wrap: wrap; /* Allow wrapping on small screens */
+    }
+    .top-controls {
+        flex-direction: column; /* Stack top controls on small screens */
+        align-items: stretch; /* Make buttons full width */
+        justify-content: center; /* Center items when stacked and wrapped */
+    }
+    .top-controls > div {
+        margin-bottom: 10px; /* Add some space between stacked control groups */
+    }
+    .top-controls .date-navigation button,
+    .top-controls .import-export button,
+    .top-controls .theme-toggle-container button { /* Ensure toggle button is also full width and styled */
+        width: 100%;
+        margin-right: 0; /* Remove right margin if buttons are full width */
+        margin-bottom: 5px; /* Space between buttons in a group if they wrap */
+    }
+    .top-controls .date-navigation h2 {
+        margin-bottom: 10px; /* Space below date when stacked */
     }
 }
 
@@ -183,15 +356,16 @@ label {
 .date-navigation h2 {
     margin: 0;
     border-bottom: none; /* Remove border from date heading */
-    color: #333;
+    color: var(--text-color-primary);
 }
 
 .date-navigation button {
-    background-color: #6c757d;
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text); /* Ensure text color is set */
 }
 
 .date-navigation button:hover {
-    background-color: #5a6268;
+    background-color: var(--button-secondary-hover-bg);
 }
 
 /* State Section Specific Styling */
@@ -201,28 +375,25 @@ label {
 
 .state-btn {
     padding: 8px 12px;
-    background-color: #eee;
-    border: 1px solid #ccc;
+    background-color: var(--button-state-bg);
+    border: 1px solid var(--button-state-border);
+    color: var(--text-color-primary); /* Text color for non-selected mood/state buttons */
     cursor: pointer;
     margin-right: 5px;
     border-radius: 5px;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 
 .state-btn:hover {
-    background-color: #ddd;
+    background-color: var(--button-state-hover-bg);
 }
 
 .state-btn.selected {
-    background-color: #337ab7; /* Different highlight for state */
-    border-color: #2e6da4;
-    color: white;
+    background-color: var(--button-state-selected-bg); /* Different highlight for state */
+    border-color: var(--button-state-selected-border);
+    color: var(--button-state-selected-text);
 }
 
-.state-section p {
-    margin-top: 15px;
-    font-weight: bold;
-}
 /* --- End State Section --- */
 
 /* --- Todo Section Specific Styling --- */
@@ -236,21 +407,21 @@ label {
 .todo-column h3 {
     margin-top: 0;
     margin-bottom: 10px;
-    color: #666;
+    color: var(--text-color-tertiary);
     text-align: center;
-    border-bottom: 1px dashed #eee;
+    border-bottom: 1px dashed var(--border-color-light);
     padding-bottom: 5px;
 }
 
-.todo-list {
+.todo-list { /* Already defined above, ensure consistency or remove redundancy */
     list-style: none;
     padding: 0;
     min-height: 50px; /* Ensure columns have some height even when empty */
 }
 
-.todo-list li {
-    padding: 8px 10px;
-    border-bottom: 1px solid #eee;
+.todo-list li { /* Already defined above, ensure consistency or remove redundancy */
+    padding: 8px 10px; /* Original was 10px, this is more specific to todo lists if different */
+    border-bottom: 1px solid var(--border-color-light);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -267,49 +438,37 @@ label {
 .todo-list li input[type="checkbox"] {
     cursor: pointer;
     /* Optional: custom checkbox styling could go here */
+    /* Accent color for dark mode checkboxes */
 }
 
-/* Style for completed items (applies to li in #completed-list) */
-#completed-list li .todo-text {
-    text-decoration: line-through;
-    color: grey;
+.dark-mode .todo-list li input[type="checkbox"] {
+    accent-color: var(--button-primary-bg); /* Or a specific dark mode accent */
 }
 
 /* Remove old completed span style */
 /* #todo-list li.completed span { ... } */
 
-.todo-list li button {
-    background-color: #d9534f;
+.todo-list li button { /* Already defined above, ensure consistency or remove redundancy if identical */
+    background-color: var(--button-danger-bg);
+    color: var(--button-danger-text);
     padding: 5px 8px; /* Slightly smaller padding */
     font-size: 0.8em;
     margin-left: 8px; /* Add space between text and button */
     flex-shrink: 0; /* Prevent delete button from shrinking */
 }
 
-.todo-list li button:hover {
-    background-color: #c9302c;
+.todo-list li button:hover { /* Already defined above */
+    background-color: var(--button-danger-hover-bg);
 }
 /* --- End Todo Section Specific Styling --- */
 
-/* Responsive adjustments */
+/* Responsive adjustments for todo columns */
 @media (max-width: 768px) {
-    .container {
-        grid-template-columns: 1fr; /* Stack sections vertically */
-        grid-template-rows: auto auto auto auto; /* Adjust rows */
-        grid-template-areas:
-            "todo"
-            "mood"
-            "state"
-            "notes"
-            "dash";
-        max-width: 95%; /* Use more width on smaller screens */
-    }
+    /* .container is already handled for stacking */
     .todo-columns {
         grid-template-columns: 1fr; /* Stack columns on small screens */
     }
-    .date-navigation {
-        flex-wrap: wrap; /* Allow wrapping on small screens */
-    }
+    /* .date-navigation wrapping already handled */
 }
 
 /* --- Notes Section Specific Styling --- */
@@ -317,13 +476,15 @@ label {
     width: 100%;
     min-height: 100px; /* Give it some initial height */
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--textarea-border-color);
     border-radius: 4px;
     font-family: inherit; /* Use the body font */
     font-size: 1em;
     line-height: 1.5;
     resize: vertical; /* Allow vertical resizing */
     box-sizing: border-box; /* Include padding and border in width */
+    background-color: var(--textarea-bg-color);
+    color: var(--textarea-text-color);
 }
 /* --- End Notes Section Specific Styling --- */
 
@@ -332,10 +493,11 @@ label {
     max-width: 900px;
     margin: 30px auto 20px auto;
     padding: 15px; /* Reduced padding */
-    background-color: #fff;
+    background-color: var(--container-bg-color);
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: var(--container-shadow);
     text-align: center;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .calendar-grid {
@@ -347,28 +509,29 @@ label {
 .calendar-grid div {
     padding: 4px; /* Significantly reduced padding */
     text-align: center;
-    border: 1px solid #f0f0f0; /* Lighter border */
+    border: 1px solid var(--calendar-day-cell-border); /* Lighter border */
     border-radius: 4px;
     min-height: auto; /* Remove min-height */
     font-size: 0.8em; /* Smaller font */
     cursor: pointer;
     position: relative; /* For indicator positioning */
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
+    color: var(--text-color-primary); /* Ensure day numbers are readable */
 }
 
 .calendar-grid .empty-day {
-    background-color: #f8f9fa;
+    background-color: var(--calendar-empty-day-bg);
     cursor: default;
     border-color: transparent; /* Make empty border invisible */
 }
 
 .calendar-grid .day-cell:hover:not(.empty-day):not(.day-header) {
-    background-color: #e9ecef;
+    background-color: var(--calendar-day-cell-hover-bg);
 }
 
 /* Indicator for logged days - make it a background highlight */
 .calendar-grid .has-log {
-    background-color: rgba(40, 167, 69, 0.2); /* Light green background */
+    background-color: var(--calendar-has-log-bg);
 }
 .calendar-grid .has-log::after {
      display: none; /* Remove the dot */
@@ -376,10 +539,10 @@ label {
 
 /* Highlight for selected day */
 .calendar-grid .selected-day {
-    background-color: #007bff !important;
-    color: white;
+    background-color: var(--calendar-selected-day-bg) !important; /* Important to override hover */
+    color: var(--calendar-selected-day-text);
     font-weight: bold;
-    border-color: #0056b3;
+    border-color: var(--calendar-selected-day-border);
 }
 
 /* Restore calendar nav styling */
@@ -394,46 +557,57 @@ label {
 .calendar-nav span {
     font-weight: bold;
     font-size: 1.1em;
+    color: var(--text-color-secondary);
 }
 
 .calendar-nav button {
-    background-color: #6c757d;
+    background-color: var(--button-secondary-bg);
+    color: var(--button-secondary-text);
     padding: 5px 10px;
 }
 
 .calendar-nav button:hover {
-    background-color: #5a6268;
+    background-color: var(--button-secondary-hover-bg);
 }
 
 /* --- End Calendar Section Specific Styling --- */
 
-/* --- Top Controls (Date Nav + Import/Export) --- */
+/* --- Top Controls (Date Nav + Import/Export + Theme Toggle) --- */
 .top-controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Adjust to space-around or add specific margins if needed */
     align-items: center;
     max-width: 900px;
     margin: 0 auto 20px auto;
     flex-wrap: wrap; /* Allow wrapping */
     gap: 10px 20px; /* Row and column gap */
 }
+.theme-toggle-container {
+    /* Default: flex takes care of it. If specific alignment needed: */
+    /* margin-left: auto; /* Pushes it to the right if space allows */
+}
+
+#theme-toggle {
+    background-color: var(--theme-toggle-button-bg);
+    color: var(--theme-toggle-button-text);
+    /* padding: 10px 15px; Inherits from general button */
+}
+
+#theme-toggle:hover {
+    background-color: var(--theme-toggle-button-hover-bg);
+}
 
 .import-export button {
     padding: 8px 12px;
-    background-color: #17a2b8; /* Teal color */
+    background-color: var(--button-import-export-bg);
+    color: var(--button-primary-text); /* Assuming white text like primary buttons */
     margin-left: 5px;
 }
 
 .import-export button:hover {
-    background-color: #138496;
+    background-color: var(--button-import-export-hover-bg);
 }
 /* --- End Top Controls --- */
-
-.container {
-    .top-controls {
-        justify-content: center; /* Center items when wrapped */
-    }
-}
 
 /* --- Dashboard Specific --- */
 .chart-controls {
@@ -448,11 +622,28 @@ label {
 .chart-controls label {
     margin-bottom: 0; /* Override default label margin */
     font-weight: normal;
+    color: var(--text-color-secondary); /* Ensure label color fits theme */
 }
 
-.chart-controls input[type="date"] {
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+.chart-controls input[type="date"] { /* Already styled with variables above */
+    /* padding: 5px; */
+    /* border: 1px solid var(--input-border-color); */
+    /* border-radius: 4px; */
+    /* background-color: var(--input-bg-color); */
+    /* color: var(--input-text-color); */
 }
-/* --- End Dashboard Specific --- */ 
+/* --- End Dashboard Specific --- */
+
+/* Chart.js specific styling for dark mode if needed for axes, legend, tooltips */
+.dark-mode #progress-chart {
+    /* Chart.js usually adapts text color from surroundings, but explicit overrides might be needed */
+    /* This depends on how Chart.js is configured in script.js (options.scales.ticks.color, etc.) */
+}
+
+/* Ensure any SASS-like nested rules at the end are fully removed or correctly commented out */
+/* For example, the previously problematic: */
+/* .container {
+    .top-controls {
+        justify-content: center; 
+    }
+} */ 
