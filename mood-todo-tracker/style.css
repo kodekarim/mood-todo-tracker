@@ -1,47 +1,43 @@
 :root {
-    --font-sans: 'Inter', sans-serif;
+    --font-sans: 'Sora', sans-serif;
 
-    /* Light Theme Palette - "Sunset" */
-    --background: #f8f9fa;
-    --background-image: linear-gradient(120deg, #f6d365 0%, #fda085 100%);
-    --surface: #ffffff;
-    --surface-glass: rgba(255, 255, 255, 0.5);
-    --border-glass: rgba(255, 255, 255, 0.75);
-    --primary: #2a6fdb;
-    --primary-hover: #2561c2;
+    /* Black Theme Palette */
+    --background: #000000;
+    --background-image: none;
+    --surface: #121212;
+    --primary: #8a7cff; 
+    --primary-hover: #a39bff;
     --secondary: #6c757d;
-    --danger: #dc3545;
-    --danger-hover: #c82333;
-    --text-primary: #212529;
-    --text-secondary: #495057;
-    --text-tertiary: #adb5bd;
-    --border-color: #dee2e6;
-    --selected-bg: #e9ecef; /* Light gray for selected items */
+    --danger: #e53e3e;
+    --danger-hover: #c53030;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-tertiary: #718096;
+    --border-color: #2a2a2a;
+    --selected-bg: rgba(138, 124, 255, 0.2);
 
     /* Universal Variables */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
     --radius-sm: 0.3rem;
-    --radius-md: 0.5rem;
+    --radius-md: 0.8rem;
 }
 
 .dark-mode {
-    /* Dark Theme Palette - "Dusk" */
-    --background: #18181b;
-    --background-image: linear-gradient(120deg, #2b32b2 0%, #141e30 100%);
-    --surface: #27272a;
-    --surface-glass: rgba(30, 41, 59, 0.4);
-    --border-glass: rgba(51, 65, 85, 0.5);
-    --primary: #3b82f6;
-    --primary-hover: #2563eb;
-    --secondary: #71717a;
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --text-primary: #f4f4f5;
-    --text-secondary: #a1a1aa;
-    --text-tertiary: #52525b;
-    --border-color: #3f3f46;
-    --selected-bg: #3f3f46;
+    /* Black Theme Palette */
+    --background: #000000;
+    --background-image: none;
+    --surface: #121212;
+    --primary: #8a7cff; 
+    --primary-hover: #a39bff;
+    --secondary: #6c757d;
+    --danger: #e53e3e;
+    --danger-hover: #c53030;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --text-tertiary: #718096;
+    --border-color: #2a2a2a;
+    --selected-bg: rgba(138, 124, 255, 0.2);
 }
 
 body {
@@ -65,6 +61,8 @@ h2 {
     font-weight: 500;
     margin: 0;
     color: var(--text-secondary);
+    text-transform: uppercase; /* Match the "TYPOGRAPHY" style in the image */
+    letter-spacing: 0.05em; /* Add some letter spacing */
 }
 
 h3 {
@@ -79,11 +77,11 @@ h3 {
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.5rem;
-    background-color: var(--surface-glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px); /* For Safari */
-    border-bottom: 1px solid var(--border-glass);
-    box-shadow: var(--shadow-sm);
+    background-color: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none; /* For Safari */
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: none; /* Remove shadow for a flatter glass look */
     position: sticky;
     top: 0;
     z-index: 900;
@@ -130,11 +128,11 @@ h3 {
 .add-todo-section, .pending-section, .completed-section, .mood-section, .state-section, .notes-section, .dashboard-section, .brain-dump-section, .calendar-section {
     padding: 1.5rem;
     border-radius: var(--radius-md);
-    background-color: var(--surface-glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px); /* For Safari */
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-glass);
+    background-color: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none; /* For Safari */
+    box-shadow: none;
+    border: 1px solid var(--border-color);
     transition: background-color 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
     animation: fadeInUp 0.5s ease-out forwards;
     opacity: 0; /* Start hidden for animation */
@@ -154,16 +152,18 @@ button {
     padding: 0.5rem 1rem;
     background-color: var(--primary);
     color: white;
-    border: none;
+    border: 1px solid transparent;
     border-radius: var(--radius-sm);
     cursor: pointer;
     font-family: var(--font-sans);
     font-weight: 500;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 button:hover {
     background-color: var(--primary-hover);
+    transform: translateY(-2px); /* Add a subtle lift effect */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 button:disabled {
@@ -176,7 +176,7 @@ input[type="text"], input[type="password"], textarea {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    background-color: var(--background);
+    background-color: #1f1f1f;
     color: var(--text-primary);
     box-sizing: border-box;
     font-family: var(--font-sans);
@@ -184,6 +184,7 @@ input[type="text"], input[type="password"], textarea {
 input:focus, textarea:focus {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
+    background-color: #222222;
 }
 
 /* --- Specific Component Redesign --- */
@@ -221,35 +222,37 @@ input:focus, textarea:focus {
 
 /* --- Specific Component Redesign --- */
 .mood-btn, .state-btn {
-    background-color: var(--surface);
+    background-color: transparent;
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
 }
 
 .mood-btn:hover, .state-btn:hover {
-    background-color: var(--selected-bg);
+    background-color: var(--surface);
+    border-color: var(--primary);
 }
 
-.mood-btn.selected {
-    background-color: #fef3c7; /* Warm yellow for mood */
-    border-color: #fcd34d;
-    color: #92400e;
+.mood-btn.selected, .state-btn.selected {
+    background-color: var(--primary);
+    border-color: var(--primary-hover);
+    color: var(--text-primary);
+    font-weight: 700;
 }
 .dark-mode .mood-btn.selected {
-    background-color: #78350f;
-    border-color: #b45309;
-    color: #fef3c7;
+    background-color: var(--primary);
+    border-color: var(--primary-hover);
+    color: var(--text-primary);
 }
 
 .state-btn.selected {
-    background-color: #dbeafe; /* Cool blue for state */
-    border-color: #93c5fd;
+    background-color: var(--primary); /* Cool blue for state */
+    border-color: var(--primary-hover);
     color: #1e40af;
 }
 .dark-mode .state-btn.selected {
-    background-color: #1e3a8a;
-    border-color: #3b82f6;
-    color: #dbeafe;
+    background-color: var(--primary);
+    border-color: var(--primary-hover);
+    color: var(--text-primary);
 }
 
 /* --- To-Do Lists --- */
@@ -419,15 +422,15 @@ button:active {
     position: fixed;
     top: 0;
     right: 0; /* Keep it aligned to the right */
-    background-color: var(--surface-glass);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px); /* For Safari */
+    background-color: var(--surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none; /* For Safari */
     box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
     padding: 20px;
     z-index: 1000;
     transition: transform 0.3s ease-in-out;
     overflow-y: auto;
-    border-left: 1px solid var(--border-glass);
+    border-left: 1px solid var(--border-color);
     transform: translateX(100%); /* Hide it off-screen */
 }
 
@@ -506,4 +509,39 @@ button:active {
 .notes-section textarea {
     flex-grow: 1; /* Allow textarea to fill available space */
     resize: none; /* Disable manual resizing */
+    min-height: 120px; /* Ensure it's large enough for notes */
+}
+
+/* --- Responsive Design --- */
+@media (max-width: 920px) {
+    .container {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "add-todo"
+            "brain-dump"
+            "pending"
+            "completed"
+            "mood"
+            "state"
+            "notes"
+            "calendar"
+            "dash";
+        padding: 0 1rem; /* Adjust padding for smaller screens */
+    }
+
+    .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1rem;
+    }
+
+    .top-bar-center {
+        order: -1; /* Move date navigation to the top on mobile */
+        padding-bottom: 0.5rem;
+        justify-content: center;
+    }
+    
+    .top-bar-left, .top-bar-right {
+        justify-content: space-between;
+    }
 } 

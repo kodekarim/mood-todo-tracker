@@ -70,6 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Functions ---
 
+    // Function to auto-resize a textarea
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto'; // Reset height to recalculate
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+
     // Mappings for chart data
     const moodMap = { 'Angry': 1, 'Sad': 2, 'Neutral': 3, 'Happy': 4, 'Excited': 5 };
     const mentalStateMap = { 'Sick': 1, 'Overthinking': 2, 'Neutral': 3, 'Focused': 4 };
@@ -129,6 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderState(data.mentalState);
         renderNotes(data.notes);
         renderTodos(data.todos);
+        renderBrainDump(data.brainDump || ''); // Render brain dump content
         renderChart(); // Chart shows trend, doesn't depend on selected date's data directly
         renderCalendar(); // Update calendar highlight/view
         updateCounts(data.todos); // Counts depend on selected date's todos
@@ -161,6 +168,12 @@ document.addEventListener('DOMContentLoaded', () => {
         notesTextarea.value = currentNotes || '';
     }
 
+    // Render Brain Dump and resize
+    function renderBrainDump(content) {
+        brainDumpInput.value = content;
+        autoResizeTextarea(brainDumpInput);
+    }
+
     // Helper to update selected class on buttons (generalized)
     function updateButtonSelection(optionsContainer, buttonSelector, dataAttribute, selectedValue) {
         const buttons = optionsContainer.querySelectorAll(buttonSelector);
@@ -170,6 +183,21 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 button.classList.remove('selected');
             }
+        });
+
+        // Auto-resize on input
+        brainDumpInput.addEventListener('input', () => {
+            autoResizeTextarea(brainDumpInput);
+        });
+
+        // Save brain dump on blur
+        brainDumpInput.addEventListener('blur', () => {
+            const dateKey = formatDateKey(selectedDate);
+            dailyData[dateKey] = {
+                ...getDataForDate(dateKey),
+                brainDump: brainDumpInput.value,
+            };
+            saveData();
         });
     }
 
