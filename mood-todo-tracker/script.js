@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const pendingList = document.getElementById('pending-list');
     const completedList = document.getElementById('completed-list');
 
+    const brainDumpInput = document.getElementById('brain-dump-input');
+    const analyzeTasksButton = document.getElementById('analyze-tasks');
+
     const completedCountSpan = document.getElementById('completed-count');
     const totalCountSpan = document.getElementById('total-count');
     const selectedDateSpan = document.getElementById('selected-date-display'); // For dashboard
@@ -43,6 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const themeToggleButton = document.getElementById('theme-toggle');
 
+    // Settings Elements
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveApiKeyButton = document.getElementById('save-api-key');
+
+    // Sidebar Elements
+    const profileButton = document.getElementById('profile-button');
+    const profileSidebar = document.getElementById('profile-sidebar');
+    const closeSidebarButton = document.getElementById('close-sidebar');
+    const overlay = document.getElementById('overlay');
+
     // --- State ---
     let selectedDate = new Date(); // Use Date object for easier manipulation
     let dailyData = {}; // Object to hold all data { 'YYYY-MM-DD': { todos: [], mood: '', mentalState: '', notes: '' }, ... }
@@ -53,12 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- LocalStorage Keys ---
     const DATA_KEY = 'dailyTracker_data'; // Single key for all data
+    const API_KEY_STORAGE_KEY = 'dailyTracker_apiKey';
 
     // --- Functions ---
 
     // Mappings for chart data
     const moodMap = { 'Angry': 1, 'Sad': 2, 'Neutral': 3, 'Happy': 4, 'Excited': 5 };
-    const mentalStateMap = { 'Sick': 1, 'Meh': 2, 'Overthinking': 3, 'Neutral': 4, 'Focused': 5 };
+    const mentalStateMap = { 'Sick': 1, 'Overthinking': 2, 'Neutral': 3, 'Focused': 4 };
 
     // Format date object to YYYY-MM-DD string
     function formatDateKey(date) {
@@ -76,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data from LocalStorage
     function loadData() {
         dailyData = JSON.parse(localStorage.getItem(DATA_KEY) || '{}');
+        loadApiKey(); // Load API key on startup
         renderUIForSelectedDate(); // Initial render based on today
     }
 
@@ -234,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         contentDiv.appendChild(span);
 
         const deleteButton = document.createElement('button');
-        deleteButton.textContent = 'Delete';
+        deleteButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`;
         deleteButton.addEventListener('click', (e) => {
             e.stopPropagation(); // Prevent potential parent clicks
             deleteTodo(index);
@@ -245,9 +260,95 @@ document.addEventListener('DOMContentLoaded', () => {
         return li;
     }
 
+    function openSidebar() {
+        profileSidebar.classList.add('open');
+        overlay.classList.add('active');
+    }
+
+    function closeSidebar() {
+        profileSidebar.classList.remove('open');
+        overlay.classList.remove('active');
+    }
+
+    // Mock function to simulate AI analysis
+    async function analyzeAndAddTask() {
+        const text = brainDumpInput.value.trim();
+        if (!text) return;
+
+        const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+        if (!apiKey) {
+            alert('Please save your Google AI API key in the Settings section first.');
+            return;
+        }
+
+        // --- Google AI Integration ---
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+
+        // Disable button to prevent multiple clicks
+        analyzeTasksButton.disabled = true;
+        analyzeTasksButton.textContent = 'Analyzing...';
+
+        const prompt = `
+            Analyze the following text and extract a list of actionable to-do items.
+            Return the result as a JSON array of strings. For example: ["Buy milk", "Call the doctor", "Finish the report"].
+            If no actionable items are found, return an empty array [].
+
+            Text to analyze:
+            ---
+            ${text}
+            ---
+        `;
+
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Google AI API error! Status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const responseText = data.candidates[0].content.parts[0].text;
+            
+            // More robustly find and parse the JSON array from the response.
+            const jsonMatch = responseText.match(/\[.*\]/s);
+            if (jsonMatch) {
+                const tasks = JSON.parse(jsonMatch[0]);
+
+                if (tasks.length > 0) {
+                    tasks.forEach(taskText => {
+                        todoInput.value = taskText;
+                        addTodo();
+                    });
+                } else {
+                    alert('No actionable tasks were found in the brain dump.');
+                }
+            } else {
+                throw new Error("Could not find a valid JSON array in the AI's response.");
+            }
+
+        } catch (error) {
+            console.error('Error calling Google AI API:', error);
+            alert('Could not analyze tasks. Please check the console for more details.');
+        } finally {
+            // Re-enable the button
+            analyzeTasksButton.disabled = false;
+            analyzeTasksButton.textContent = 'Analyze and Add Task';
+            brainDumpInput.value = ''; // Clear input after processing
+        }
+    }
+
      // Add a new todo (adds to pending list)
     function addTodo() {
         const text = todoInput.value.trim();
+        if (text === '') return; // Don't add empty todos
         if (text) {
             const dateKey = formatDateKey(selectedDate);
             const currentData = getDataForDate(dateKey);
@@ -261,21 +362,31 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Toggle todo completion status (triggered by checkbox)
+    // Toggle a todo's completed state
     function toggleTodo(index) {
         const dateKey = formatDateKey(selectedDate);
-        const currentData = getDataForDate(dateKey);
-        const updatedTodos = [...currentData.todos]; // Create a copy
-        if (updatedTodos[index]) {
-            updatedTodos[index].completed = !updatedTodos[index].completed;
-            updateDataForSelectedDate({ todos: updatedTodos });
-            renderTodos(updatedTodos); // Re-render both lists to move item
-            updateCounts(updatedTodos); // Update counts
-            renderChart(); // Update chart data
+        const data = getDataForDate(dateKey);
+        const todo = data.todos[index];
+        todo.completed = !todo.completed;
+
+        // Animate the element before re-rendering
+        const listElement = (todo.completed ? pendingList : completedList).querySelector(`[data-index="${index}"]`);
+        if (listElement) {
+            listElement.classList.add('completing');
+            setTimeout(() => {
+                updateDataForSelectedDate({ todos: data.todos });
+                renderTodos(data.todos);
+                updateCounts(data.todos);
+                renderChart(); // Or just update it
+            }, 300); // Match animation duration
+        } else {
+            // Fallback for safety
+            updateDataForSelectedDate({ todos: data.todos });
+            renderUIForSelectedDate();
         }
     }
 
-    // Update the text of a specific todo
+    // Update the text of a todo
     function updateTodoText(index, newText) {
         const dateKey = formatDateKey(selectedDate);
         const currentData = getDataForDate(dateKey);
@@ -286,20 +397,26 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDataForSelectedDate({ todos: updatedTodos });
             renderTodos(updatedTodos);
             updateCounts(updatedTodos);
-            // No need to call renderChart here unless task text is part of chart data
+            renderChart();
         }
     }
 
-    // Delete a todo
+    // Delete a todo from the list
     function deleteTodo(index) {
         const dateKey = formatDateKey(selectedDate);
-        const currentData = getDataForDate(dateKey);
-        const updatedTodos = [...currentData.todos]; // Create a copy
-        updatedTodos.splice(index, 1);
-        updateDataForSelectedDate({ todos: updatedTodos });
-        renderTodos(updatedTodos); // Re-render both lists
-        updateCounts(updatedTodos); // Update counts
-        renderChart(); // Update chart data
+        const data = getDataForDate(dateKey);
+
+        // Animate before removing
+        const listElements = document.querySelectorAll(`[data-index="${index}"]`); // Can be in pending or completed
+        listElements.forEach(el => el.classList.add('deleting'));
+
+        setTimeout(() => {
+            data.todos.splice(index, 1);
+            updateDataForSelectedDate({ todos: data.todos });
+            renderTodos(data.todos);
+            updateCounts(data.todos);
+            renderChart();
+        }, 300); // Match animation duration
     }
 
     // Update completed/total counts for the selected date
@@ -675,26 +792,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Theme Toggle --- 
     function applyDarkMode(isDark) {
+        document.body.classList.toggle('dark-mode', isDark);
+        
+        // Toggle theme icons
+        const lightIcon = document.querySelector('.theme-icon-light');
+        const darkIcon = document.querySelector('.theme-icon-dark');
         if (isDark) {
-            document.body.classList.add('dark-mode');
-            themeToggleButton.textContent = 'Toggle Light Mode';
+            lightIcon.style.display = 'none';
+            darkIcon.style.display = 'inline-block';
         } else {
-            document.body.classList.remove('dark-mode');
-            themeToggleButton.textContent = 'Toggle Dark Mode';
+            lightIcon.style.display = 'inline-block';
+            darkIcon.style.display = 'none';
         }
     }
 
     function saveDarkModePreference(isDark) {
-        localStorage.setItem('darkMode', isDark ? 'enabled' : 'disabled');
+        localStorage.setItem('darkMode', isDark);
     }
 
     function loadDarkModePreference() {
-        const preference = localStorage.getItem('darkMode');
-        if (preference === 'enabled') {
-            applyDarkMode(true);
-        } else {
-            applyDarkMode(false); // Default to light mode if no preference or disabled
-        }
+        // Defaults to dark mode unless 'false' is explicitly saved
+        const isDark = localStorage.getItem('darkMode') !== 'false';
+        applyDarkMode(isDark);
     }
 
     themeToggleButton.addEventListener('click', () => {
@@ -702,4 +821,32 @@ document.addEventListener('DOMContentLoaded', () => {
         applyDarkMode(!isDarkModeEnabled);
         saveDarkModePreference(!isDarkModeEnabled);
     });
+
+    function saveApiKey() {
+        const apiKey = apiKeyInput.value.trim();
+        if (apiKey) {
+            localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+            alert('API Key saved successfully!');
+            apiKeyInput.value = ''; // Clear input for security
+        } else {
+            alert('Please enter a valid API key.');
+        }
+    }
+
+    function loadApiKey() {
+        const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+        if (apiKey) {
+            // We don't display the key, but we know it's there.
+            // You could optionally show a status message.
+            console.log('API Key loaded from localStorage.');
+        }
+    }
+
+    saveApiKeyButton.addEventListener('click', saveApiKey);
+    analyzeTasksButton.addEventListener('click', analyzeAndAddTask);
+
+    // Sidebar event listeners
+    profileButton.addEventListener('click', openSidebar);
+    closeSidebarButton.addEventListener('click', closeSidebar);
+    overlay.addEventListener('click', closeSidebar);
 }); 
