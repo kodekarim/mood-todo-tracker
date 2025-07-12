@@ -80,6 +80,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const moodMap = { 'Angry': 1, 'Sad': 2, 'Neutral': 3, 'Happy': 4, 'Excited': 5 };
     const mentalStateMap = { 'Sick': 1, 'Overthinking': 2, 'Neutral': 3, 'Focused': 4 };
 
+    // Valid options for Mood and State, to ensure LLM output is constrained
+    const VALID_MOODS = Object.keys(moodMap);
+    const VALID_MENTAL_STATES = Object.keys(mentalStateMap);
+
     // Format date object to YYYY-MM-DD string
     function formatDateKey(date) {
         const year = date.getFullYear();
@@ -300,76 +304,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mock function to simulate AI analysis
     async function analyzeAndAddTask() {
-        const text = brainDumpInput.value.trim();
-        if (!text) return;
-
         const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
         if (!apiKey) {
-            alert('Please save your Google AI API key in the Settings section first.');
+            alert('Please set your OpenAI API key in the settings sidebar first.');
             return;
         }
 
-        // --- Google AI Integration ---
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+        const brainDumpText = brainDumpInput.value.trim();
+        if (brainDumpText === '') {
+            alert('Brain dump is empty. Write something to analyze.');
+            return;
+        }
 
-        // Disable button to prevent multiple clicks
         analyzeTasksButton.disabled = true;
         analyzeTasksButton.textContent = 'Analyzing...';
 
-        const prompt = `
-            Analyze the following text and extract a list of actionable to-do items.
-            Return the result as a JSON array of strings. For example: ["Buy milk", "Call the doctor", "Finish the report"].
-            If no actionable items are found, return an empty array [].
-
-            Text to analyze:
-            ---
-            ${text}
-            ---
-        `;
-
         try {
-            const response = await fetch(API_URL, {
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
                 body: JSON.stringify({
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }]
+                    model: 'gpt-3.5-turbo',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `You are a helpful assistant that analyzes a user's "brain dump" text and extracts actionable tasks, their mood, and their mental state.
+
+                            Respond with a JSON object with three keys: "tasks", "mood", and "mentalState".
+                            - "tasks" should be an array of strings, where each string is a single, concise to-do item.
+                            - "mood" must be one of the following values: ${VALID_MOODS.join(', ')}.
+                            - "mentalState" must be one of the following values: ${VALID_MENTAL_STATES.join(', ')}.
+
+                            Analyze the overall sentiment and context to determine the mood and mental state. If the text provides no clear indication for mood or mental state, you can return "Neutral".`
+                        },
+                        {
+                            role: 'user',
+                            content: brainDumpText
+                        }
+                    ],
+                    response_format: { type: "json_object" }
                 })
             });
 
             if (!response.ok) {
-                throw new Error(`Google AI API error! Status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(`OpenAI API error: ${errorData.error.message}`);
             }
 
             const data = await response.json();
-            const responseText = data.candidates[0].content.parts[0].text;
-            
-            // More robustly find and parse the JSON array from the response.
-            const jsonMatch = responseText.match(/\[.*\]/s);
-            if (jsonMatch) {
-                const tasks = JSON.parse(jsonMatch[0]);
+            const result = JSON.parse(data.choices[0].message.content);
 
-                if (tasks.length > 0) {
-                    tasks.forEach(taskText => {
-                        todoInput.value = taskText;
-                        addTodo();
-                    });
-                } else {
-                    alert('No actionable tasks were found in the brain dump.');
-                }
-            } else {
-                throw new Error("Could not find a valid JSON array in the AI's response.");
+            // --- Update UI with LLM data ---
+            if (result.tasks && Array.isArray(result.tasks)) {
+                const dateKey = formatDateKey(selectedDate);
+                const currentData = getDataForDate(dateKey);
+                const newTodos = result.tasks.map(taskText => ({ text: taskText, completed: false }));
+                currentData.todos.push(...newTodos);
+                updateDataForSelectedDate({ todos: currentData.todos });
+                renderTodos(currentData.todos);
+                updateCounts(currentData.todos);
+            }
+
+            if (result.mood && VALID_MOODS.includes(result.mood)) {
+                updateDataForSelectedDate({ mood: result.mood });
+                renderMood(result.mood);
+            }
+
+            if (result.mentalState && VALID_MENTAL_STATES.includes(result.mentalState)) {
+                updateDataForSelectedDate({ mentalState: result.mentalState });
+                renderState(result.mentalState);
             }
 
         } catch (error) {
-            console.error('Error calling Google AI API:', error);
-            alert('Could not analyze tasks. Please check the console for more details.');
+            console.error('Error during analysis:', error);
+            alert(`Failed to analyze tasks. ${error.message}`);
         } finally {
-            // Re-enable the button
             analyzeTasksButton.disabled = false;
             analyzeTasksButton.textContent = 'Analyze and Add Task';
-            brainDumpInput.value = ''; // Clear input after processing
         }
     }
 
@@ -664,45 +678,47 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Event Listeners ---
-    prevDayButton.addEventListener('click', () => changeDate(-1));
-    nextDayButton.addEventListener('click', () => changeDate(1));
+    function initEventListeners() {
+        prevDayButton.addEventListener('click', () => changeDate(-1));
+        nextDayButton.addEventListener('click', () => changeDate(1));
+        addTodoButton.addEventListener('click', addTodo);
+        analyzeTasksButton.addEventListener('click', analyzeAndAddTask);
 
-    // Single Mood Listener
-    moodOptions.addEventListener('click', (e) => {
-        if (e.target.classList.contains('mood-btn')) {
-            const selectedMood = e.target.dataset.mood;
-            updateDataForSelectedDate({ mood: selectedMood });
-            renderMood(selectedMood);
-        }
-    });
+        // Add event listener for Enter key in todo input
+        todoInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
 
-    // Mental State Listener
-    mentalStateOptions.addEventListener('click', (e) => {
-        if (e.target.classList.contains('state-btn')) {
-            const selectedMentalState = e.target.dataset.state;
-            updateDataForSelectedDate({ mentalState: selectedMentalState });
-            renderState(selectedMentalState); // Only pass mental state
-        }
-    });
+        // Single Mood Listener
+        moodOptions.addEventListener('click', (e) => {
+            if (e.target.classList.contains('mood-btn')) {
+                const selectedMood = e.target.dataset.mood;
+                updateDataForSelectedDate({ mood: selectedMood });
+                renderMood(selectedMood);
+            }
+        });
 
-    // Remove old mood event listeners
+        // Mental State Listener
+        mentalStateOptions.addEventListener('click', (e) => {
+            if (e.target.classList.contains('state-btn')) {
+                const selectedMentalState = e.target.dataset.state;
+                updateDataForSelectedDate({ mentalState: selectedMentalState });
+                renderState(selectedMentalState); // Only pass mental state
+            }
+        });
 
-    addTodoButton.addEventListener('click', addTodo);
-    todoInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            addTodo();
-        }
-    });
+        // Notes Listener (save on input)
+        notesTextarea.addEventListener('input', () => {
+            updateDataForSelectedDate({ notes: notesTextarea.value });
+            // No need to re-render anything else on note change
+        });
 
-    // Notes Listener (save on input)
-    notesTextarea.addEventListener('input', () => {
-        updateDataForSelectedDate({ notes: notesTextarea.value });
-        // No need to re-render anything else on note change
-    });
-
-    // Calendar Navigation Listeners (Add back)
-    prevMonthButton.addEventListener('click', () => changeCalendarMonth(-1));
-    nextMonthButton.addEventListener('click', () => changeCalendarMonth(1));
+        // Calendar Navigation Listeners (Add back)
+        prevMonthButton.addEventListener('click', () => changeCalendarMonth(-1));
+        nextMonthButton.addEventListener('click', () => changeCalendarMonth(1));
+    }
 
     // --- Import/Export Handlers ---
 
@@ -871,10 +887,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     saveApiKeyButton.addEventListener('click', saveApiKey);
-    analyzeTasksButton.addEventListener('click', analyzeAndAddTask);
 
     // Sidebar event listeners
     profileButton.addEventListener('click', openSidebar);
     closeSidebarButton.addEventListener('click', closeSidebar);
     overlay.addEventListener('click', closeSidebar);
+
+    initEventListeners(); // Initialize all event listeners
 }); 
