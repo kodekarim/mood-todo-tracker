@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const brainDumpInput = document.getElementById('brain-dump-input');
     const analyzeTasksButton = document.getElementById('analyze-tasks');
+    const brainDumpModelDisplay = document.getElementById('brain-dump-model-display');
+    const currentActiveModel = document.getElementById('current-active-model');
+    const modelSwitchSection = document.getElementById('model-switch-section');
+    const modelSelector = document.getElementById('model-selector');
+    const switchModelBtn = document.getElementById('switch-model-btn');
 
     const completedCountSpan = document.getElementById('completed-count');
     const totalCountSpan = document.getElementById('total-count');
@@ -45,6 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const chartDateRangeDisplay = document.getElementById('chart-date-range-display');
 
     const themeToggleButton = document.getElementById('theme-toggle');
+    const todayButton = document.getElementById('today-button');
 
     // Settings Elements
     const apiKeyInput = document.getElementById('api-key-input');
@@ -55,6 +61,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileSidebar = document.getElementById('profile-sidebar');
     const closeSidebarButton = document.getElementById('close-sidebar');
     const overlay = document.getElementById('overlay');
+    
+    // Model Management Elements
+    const refreshModelsButton = document.getElementById('refresh-models');
+    const testConnectionButton = document.getElementById('test-connection');
+    const downloadModelButton = document.getElementById('download-model');
+    const deleteModelButton = document.getElementById('delete-model');
+    const clearAllModelsButton = document.getElementById('clear-all-models');
+    const modelBrowser = document.getElementById('model-browser');
+    const modelList = document.getElementById('model-list');
+    const modelStatusBadge = document.getElementById('model-status-badge');
+    const downloadProgress = document.getElementById('download-progress');
+    const progressFill = document.getElementById('progress-fill');
+    const progressPercentage = document.getElementById('progress-percentage');
+    const progressStatus = document.getElementById('progress-status');
+    const modelStatus = document.getElementById('model-status');
 
     // --- State ---
     let selectedDate = new Date(); // Use Date object for easier manipulation
@@ -63,10 +84,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let calendarDisplayDate = new Date(); // Add back state for calendar view month/year
     let chartStartDate = new Date(); // Initialize chart range state
     let chartEndDate = new Date();
+    
+    // WebLLM State
+    let webLLMEngine = null;
+    let isModelLoading = false;
+    let isModelReady = false;
 
     // --- LocalStorage Keys ---
     const DATA_KEY = 'dailyTracker_data'; // Single key for all data
-    const API_KEY_STORAGE_KEY = 'dailyTracker_apiKey';
+    const SELECTED_MODEL_KEY = 'dailyTracker_selectedModel'; // Store selected model
+    const AVAILABLE_MODELS_KEY = 'dailyTracker_availableModels'; // Store available models list
+    const MODEL_STATUS_KEY = 'dailyTracker_modelStatus'; // Store model status messages
 
     // --- Functions ---
 
@@ -74,6 +102,773 @@ document.addEventListener('DOMContentLoaded', () => {
     function autoResizeTextarea(textarea) {
         textarea.style.height = 'auto'; // Reset height to recalculate
         textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+
+    // Model persistence functions
+    function saveSelectedModel(modelId) {
+        localStorage.setItem(SELECTED_MODEL_KEY, modelId);
+        updateCurrentModelDisplay(modelId);
+        updateBrainDumpModelDisplay(modelId);
+    }
+
+    function loadSelectedModel() {
+        return localStorage.getItem(SELECTED_MODEL_KEY);
+    }
+
+    function saveAvailableModels(models) {
+        localStorage.setItem(AVAILABLE_MODELS_KEY, JSON.stringify(models));
+        updateModelSwitcher(models);
+    }
+
+    function loadAvailableModels() {
+        const stored = localStorage.getItem(AVAILABLE_MODELS_KEY);
+        return stored ? JSON.parse(stored) : [];
+    }
+
+    function saveModelStatus(message) {
+        localStorage.setItem(MODEL_STATUS_KEY, message);
+    }
+
+    function loadModelStatus() {
+        return localStorage.getItem(MODEL_STATUS_KEY) || '';
+    }
+
+    function updateCurrentModelDisplay(modelId) {
+        if (modelId) {
+            // Extract a shorter, more readable name
+            const displayName = modelId.replace(/-q4f\d+_\d+$/, '').replace(/-hf$/, '').replace(/-MLC$/, '');
+            currentActiveModel.textContent = displayName;
+        } else {
+            currentActiveModel.textContent = 'No model selected';
+        }
+    }
+
+    function updateBrainDumpModelDisplay(modelId) {
+        if (modelId) {
+            const displayName = modelId.replace(/-q4f\d+_\d+$/, '').replace(/-hf$/, '').replace(/-MLC$/, '');
+            brainDumpModelDisplay.textContent = `Using: ${displayName}`;
+        } else {
+            brainDumpModelDisplay.textContent = 'No AI model selected';
+        }
+    }
+
+    function updateModelSwitcher(models) {
+        // Clear existing options
+        modelSelector.innerHTML = '<option value="">Select a model...</option>';
+        
+        if (models && models.length > 0) {
+            models.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.model_id;
+                option.textContent = model.model_id.replace(/-q4f\d+_\d+$/, '').replace(/-hf$/, '').replace(/-MLC$/, '');
+                modelSelector.appendChild(option);
+            });
+            
+            // Show the switcher if we have multiple models
+            if (models.length > 1) {
+                modelSwitchSection.style.display = 'block';
+            } else {
+                modelSwitchSection.style.display = 'none';
+            }
+        } else {
+            modelSwitchSection.style.display = 'none';
+        }
+    }
+
+    // Try to load the previously selected model on startup
+    async function tryLoadSavedModel() {
+        const savedModelId = loadSelectedModel();
+        if (savedModelId && !isModelReady && !isModelLoading) {
+            try {
+                updateModelStatus('Loading saved model...', 'loading');
+                updateCurrentModelDisplay(savedModelId);
+                
+                // Import WebLLM with version fallback
+                let webllm;
+                try {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+                } catch (latestError) {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+                }
+                
+                // Try to load the saved model
+                webLLMEngine = await webllm.CreateMLCEngine(savedModelId, {
+                    initProgressCallback: (progress) => {
+                        // Silent loading, no progress bar needed
+                    },
+                    appConfig: {
+                        useIndexedDBCache: true,
+                        model_list: [],
+                    }
+                });
+                
+                isModelReady = true;
+                updateModelUI('ready', `${savedModelId} loaded and ready!`);
+                updateModelStatus('Model loaded successfully', 'ready');
+                
+            } catch (error) {
+                console.warn('Failed to load saved model:', error);
+                updateModelStatus('Saved model failed to load. Please select a new model.', 'error');
+                updateCurrentModelDisplay(null);
+                localStorage.removeItem(SELECTED_MODEL_KEY);
+            }
+        } else if (savedModelId) {
+            updateCurrentModelDisplay(savedModelId);
+        }
+    }
+
+    // Model Management Functions
+    function updateModelUI(status, message = '') {
+        // Update status badge
+        modelStatusBadge.className = `status-badge ${status}`;
+        
+        switch (status) {
+            case 'not-downloaded':
+                modelStatusBadge.textContent = 'Not Downloaded';
+                downloadModelButton.style.display = 'flex';
+                deleteModelButton.style.display = 'none';
+                downloadProgress.style.display = 'none';
+                break;
+            case 'downloading':
+                modelStatusBadge.textContent = 'Downloading';
+                downloadModelButton.style.display = 'none';
+                deleteModelButton.style.display = 'none';
+                downloadProgress.style.display = 'block';
+                break;
+            case 'ready':
+                modelStatusBadge.textContent = 'Ready';
+                downloadModelButton.style.display = 'none';
+                deleteModelButton.style.display = 'flex';
+                downloadProgress.style.display = 'none';
+                break;
+            case 'error':
+                modelStatusBadge.textContent = 'Error';
+                downloadModelButton.style.display = 'flex';
+                deleteModelButton.style.display = 'none';
+                downloadProgress.style.display = 'none';
+                break;
+        }
+        
+        // Update brain dump status if provided and save it
+        if (message) {
+            updateModelStatus(message, status === 'ready' ? 'ready' : status === 'error' ? 'error' : 'loading');
+            saveModelStatus(message);
+        }
+    }
+
+    function updateDownloadProgress(progress, status = '') {
+        const percentage = Math.round(progress * 100);
+        progressFill.style.width = `${percentage}%`;
+        progressPercentage.textContent = `${percentage}%`;
+        if (status) {
+            progressStatus.textContent = status;
+        }
+    }
+
+    async function refreshModels() {
+        refreshModelsButton.disabled = true;
+        refreshModelsButton.textContent = 'Loading...';
+        
+        try {
+            updateModelStatus('Fetching available models...', 'loading');
+            
+            // Import WebLLM to get available models - try latest version first
+            let webllm;
+            try {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+            } catch (latestError) {
+                console.warn('Failed to load latest WebLLM, falling back to v0.2.46:', latestError);
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+            }
+            
+            // Try different ways to get the model list
+            let availableModels = [];
+            
+            if (webllm.prebuiltAppConfig && webllm.prebuiltAppConfig.model_list) {
+                availableModels = webllm.prebuiltAppConfig.model_list;
+            } else if (webllm.ModelRecord) {
+                // Try to get models from ModelRecord if available
+                availableModels = Object.keys(webllm.ModelRecord).map(key => ({ model_id: key }));
+            } else {
+                // Fallback to known working models
+                availableModels = [
+                    { model_id: "Llama-2-7b-chat-hf-q4f32_1" },
+                    { model_id: "Llama-2-7b-chat-hf-q4f16_1" },
+                    { model_id: "RedPajama-INCITE-Chat-3B-v1-q4f32_1" },
+                    { model_id: "RedPajama-INCITE-Chat-3B-v1-q4f16_1" },
+                    { model_id: "vicuna-v1-7b-q4f32_1" },
+                    { model_id: "TinyLlama-1.1B-Chat-v0.4-q4f32_1" },
+                    { model_id: "TinyLlama-1.1B-Chat-v0.4-q4f16_1" }
+                ];
+            }
+            
+            if (availableModels.length === 0) {
+                throw new Error('No models found in WebLLM config');
+            }
+            
+            // Filter and sort models by size (smaller first)
+            const filteredModels = availableModels
+                .filter(model => 
+                    model.model_id.includes('chat') || 
+                    model.model_id.includes('instruct') ||
+                    model.model_id.includes('Chat') ||
+                    model.model_id.includes('Instruct')
+                )
+                .sort((a, b) => {
+                    // Sort by estimated size (smaller first)
+                    const sizeA = estimateModelSize(a.model_id);
+                    const sizeB = estimateModelSize(b.model_id);
+                    return sizeA - sizeB;
+                })
+                .slice(0, 10); // Show top 10 models
+            
+            displayModels(filteredModels);
+            saveAvailableModels(filteredModels); // Save for model switcher
+            modelBrowser.style.display = 'block';
+            updateModelStatus('✅ Found ' + filteredModels.length + ' available models', 'ready');
+            
+        } catch (error) {
+            console.error('Failed to fetch models:', error);
+            updateModelStatus('❌ Failed to fetch models: ' + error.message, 'error');
+            modelBrowser.style.display = 'none';
+        } finally {
+            refreshModelsButton.disabled = false;
+            refreshModelsButton.textContent = 'Refresh Models';
+        }
+    }
+
+    function estimateModelSize(modelId) {
+        // Estimate model size based on name patterns
+        if (modelId.includes('3B') || modelId.includes('3b')) return 1.5;
+        if (modelId.includes('7B') || modelId.includes('7b')) return 3.5;
+        if (modelId.includes('13B') || modelId.includes('13b')) return 7;
+        if (modelId.includes('30B') || modelId.includes('30b')) return 15;
+        if (modelId.includes('70B') || modelId.includes('70b')) return 35;
+        
+        // Default estimate based on common patterns
+        if (modelId.includes('small') || modelId.includes('mini')) return 1;
+        if (modelId.includes('medium')) return 2.5;
+        if (modelId.includes('large')) return 5;
+        
+        return 3; // Default estimate
+    }
+
+    function formatModelSize(sizeGB) {
+        if (sizeGB < 1) return `${Math.round(sizeGB * 1000)}MB`;
+        return `${sizeGB.toFixed(1)}GB`;
+    }
+
+    function displayModels(models) {
+        modelList.innerHTML = '';
+        
+        models.forEach(model => {
+            const modelItem = document.createElement('div');
+            modelItem.className = 'model-item';
+            
+            const estimatedSize = estimateModelSize(model.model_id);
+            const formattedSize = formatModelSize(estimatedSize);
+            
+            // Extract model type/family
+            const modelFamily = extractModelFamily(model.model_id);
+            
+            modelItem.innerHTML = `
+                <div class="model-info">
+                    <div class="model-name">${model.model_id}</div>
+                    <div class="model-details">
+                        <span class="model-size">~${formattedSize}</span>
+                        <span class="model-family">${modelFamily}</span>
+                        <span class="model-type">Chat Model</span>
+                    </div>
+                </div>
+                <button class="model-download-btn" onclick="downloadSpecificModel('${model.model_id}')">
+                    Download
+                </button>
+            `;
+            
+            modelList.appendChild(modelItem);
+        });
+    }
+
+    function extractModelFamily(modelId) {
+        if (modelId.includes('Llama') || modelId.includes('llama')) return 'Llama';
+        if (modelId.includes('RedPajama')) return 'RedPajama';
+        if (modelId.includes('Vicuna') || modelId.includes('vicuna')) return 'Vicuna';
+        if (modelId.includes('ChatGLM')) return 'ChatGLM';
+        if (modelId.includes('Mistral') || modelId.includes('mistral')) return 'Mistral';
+        if (modelId.includes('Phi') || modelId.includes('phi')) return 'Phi';
+        return 'Other';
+    }
+
+    // Make downloadSpecificModel globally available
+    window.downloadSpecificModel = async function(modelId) {
+        if (isModelLoading || isModelReady) return;
+        
+        try {
+            isModelLoading = true;
+            updateModelUI('downloading');
+            updateDownloadProgress(0, `Validating ${modelId}...`);
+            
+            // Import WebLLM with version fallback
+            let webllm;
+            try {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+            } catch (latestError) {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+            }
+            
+            updateDownloadProgress(0.05, 'Checking model availability...');
+            
+            // Validate model exists in the available models list
+            let modelExists = false;
+            try {
+                if (webllm.prebuiltAppConfig && webllm.prebuiltAppConfig.model_list) {
+                    modelExists = webllm.prebuiltAppConfig.model_list.some(model => 
+                        model.model_id === modelId || model.model === modelId
+                    );
+                }
+            } catch (e) {
+                console.warn('Could not validate model list:', e);
+                // Continue anyway, let WebLLM handle the validation
+                modelExists = true;
+            }
+            
+            if (!modelExists) {
+                // Try common model ID variations
+                const variations = [
+                    modelId,
+                    modelId.replace('-MLC', ''),
+                    modelId.replace('_1-MLC', '_1'),
+                    modelId.replace('q4f32_1-MLC', 'q4f32_1'),
+                    modelId.replace('q4f16_1-MLC', 'q4f16_1')
+                ];
+                
+                for (const variation of variations) {
+                    try {
+                        updateDownloadProgress(0.1, `Trying ${variation}...`);
+                        
+                        webLLMEngine = await webllm.CreateMLCEngine(variation, {
+                            initProgressCallback: (progress) => {
+                                const scaledProgress = 0.1 + (progress.progress * 0.9);
+                                updateDownloadProgress(scaledProgress, `Downloading ${variation}...`);
+                            }
+                        });
+                        
+                        // If we get here, the model loaded successfully
+                        isModelReady = true;
+                        isModelLoading = false;
+                        updateModelUI('ready', `${variation} ready! Your data stays private.`);
+                        
+                        // Save the working model ID
+                        saveSelectedModel(variation);
+                        
+                        // Hide model browser after successful download
+                        modelBrowser.style.display = 'none';
+                        return;
+                        
+                    } catch (variationError) {
+                        console.warn(`Failed to load ${variation}:`, variationError.message);
+                        continue;
+                    }
+                }
+                
+                // If all variations failed
+                throw new Error(`Model "${modelId}" and its variations are not available. Please try a different model.`);
+            } else {
+                // Model exists in list, try to download it
+                updateDownloadProgress(0.1, 'Starting download...');
+                
+                webLLMEngine = await webllm.CreateMLCEngine(modelId, {
+                    initProgressCallback: (progress) => {
+                        const scaledProgress = 0.1 + (progress.progress * 0.9);
+                        updateDownloadProgress(scaledProgress, `Downloading ${modelId}...`);
+                    }
+                });
+                
+                isModelReady = true;
+                isModelLoading = false;
+                updateModelUI('ready', `${modelId} ready! Your data stays private.`);
+                
+                // Save the selected model and update display
+                saveSelectedModel(modelId);
+                
+                // Hide model browser after successful download
+                modelBrowser.style.display = 'none';
+            }
+            
+        } catch (error) {
+            console.error('Failed to download model:', error);
+            isModelLoading = false;
+            updateModelUI('error', `❌ Failed to download ${modelId}: ${error.message}`);
+        }
+    };
+
+    async function testConnection() {
+        testConnectionButton.disabled = true;
+        testConnectionButton.textContent = 'Testing...';
+        
+        try {
+            updateModelStatus('Testing WebLLM connection...', 'loading');
+            
+            // Test if we can import WebLLM with version fallback
+            let webllm;
+            try {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+            } catch (latestError) {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+            }
+            
+            if (!webllm.CreateMLCEngine) {
+                throw new Error('WebLLM CreateMLCEngine not found');
+            }
+            
+            // Debug: Log available models to console
+            console.log('=== WebLLM Debug Info ===');
+            console.log('WebLLM object keys:', Object.keys(webllm));
+            
+            if (webllm.prebuiltAppConfig) {
+                console.log('prebuiltAppConfig found');
+                if (webllm.prebuiltAppConfig.model_list) {
+                    console.log('Available models:', webllm.prebuiltAppConfig.model_list.length);
+                    console.log('First 5 models:', webllm.prebuiltAppConfig.model_list.slice(0, 5));
+                } else {
+                    console.log('No model_list in prebuiltAppConfig');
+                }
+            } else {
+                console.log('No prebuiltAppConfig found');
+            }
+            
+            if (webllm.ModelRecord) {
+                console.log('ModelRecord found with keys:', Object.keys(webllm.ModelRecord).slice(0, 10));
+            }
+            
+            console.log('========================');
+            
+            // Test basic functionality
+            updateModelStatus('✅ Connection successful! Check console for debug info.', 'ready');
+            alert('✅ Connection test passed! Check the browser console (F12) for detailed model information.');
+            
+        } catch (error) {
+            console.error('Connection test failed:', error);
+            updateModelStatus('❌ Connection test failed. Check console for details.', 'error');
+            alert('❌ Connection test failed. Please check your internet connection and try again.\n\nError: ' + error.message);
+        } finally {
+            testConnectionButton.disabled = false;
+            testConnectionButton.textContent = 'Test Connection';
+        }
+    }
+
+    async function downloadModel() {
+        if (isModelLoading || isModelReady) return;
+        
+        try {
+            isModelLoading = true;
+            updateModelUI('downloading');
+            updateDownloadProgress(0, 'Initializing...');
+            
+            // Import WebLLM dynamically with better error handling
+            let webllm;
+            try {
+                // Try the latest stable version first
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+            } catch (importError) {
+                console.warn('Failed to import WebLLM v0.2.46, trying fallback version:', importError);
+                try {
+                    // Fallback to an older stable version
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.40/lib/index.js');
+                } catch (fallbackError) {
+                    console.error('Failed to import WebLLM fallback:', fallbackError);
+                    throw new Error('Failed to load WebLLM library. Please check your internet connection and try again.');
+                }
+            }
+            
+            updateDownloadProgress(0.05, 'WebLLM library loaded...');
+            
+            // Check if CreateMLCEngine exists
+            if (!webllm.CreateMLCEngine) {
+                throw new Error('WebLLM CreateMLCEngine not found. Library may be incompatible.');
+            }
+            
+            updateDownloadProgress(0.1, 'Connecting to model repository...');
+            
+            // Try different model names in order of preference (smaller models first for reliability)
+            const modelOptions = [
+                "RedPajama-INCITE-Chat-3B-v1-q4f32_1",  // Smaller, more reliable
+                "RedPajama-INCITE-Chat-3B-v1-q4f16_1",  // Even smaller
+                "Llama-2-7b-chat-hf-q4f32_1",           // Original choice
+                "Llama-2-7b-chat-hf-q4f16_1",           // Alternative quantization
+                "vicuna-v1-7b-q4f32_1"                   // Another option
+            ];
+            
+            let modelLoaded = false;
+            let lastError = null;
+            
+            for (const modelName of modelOptions) {
+                try {
+                    updateDownloadProgress(0.15, `Trying model: ${modelName}...`);
+                    
+                    webLLMEngine = await webllm.CreateMLCEngine(modelName, {
+                        initProgressCallback: (progress) => {
+                            // Scale progress from 15% to 95%
+                            const scaledProgress = 0.15 + (progress.progress * 0.8);
+                            updateDownloadProgress(scaledProgress, `Downloading ${modelName}...`);
+                        }
+                    });
+                    
+                    modelLoaded = true;
+                    break;
+                } catch (modelError) {
+                    console.warn(`Failed to load model ${modelName}:`, modelError);
+                    lastError = modelError;
+                    continue;
+                }
+            }
+            
+            if (!modelLoaded) {
+                throw lastError || new Error('All model options failed to load');
+            }
+            
+            updateDownloadProgress(1, 'Model ready!');
+            
+            isModelReady = true;
+            isModelLoading = false;
+            updateModelUI('ready', '🍎 Local AI ready! Your data stays private.');
+            
+        } catch (error) {
+            console.error('Failed to download WebLLM model:', error);
+            isModelLoading = false;
+            
+            let errorMessage = '❌ Failed to download model. ';
+            if (error.message.includes('internet') || error.message.includes('network')) {
+                errorMessage += 'Check your internet connection.';
+            } else if (error.message.includes('WebLLM')) {
+                errorMessage += 'WebLLM library issue. Try refreshing the page.';
+            } else if (error.message.includes('model')) {
+                errorMessage += 'Model not available. Try again later.';
+            } else {
+                errorMessage += 'Unknown error occurred.';
+            }
+            
+            updateModelUI('error', errorMessage);
+        }
+    }
+
+    async function deleteModel() {
+        if (confirm('Are you sure you want to delete the local AI model? This will free up ~3GB of storage but you\'ll need to download it again to use Local AI.')) {
+            try {
+                // Clear the engine
+                webLLMEngine = null;
+                isModelReady = false;
+                isModelLoading = false;
+                
+                // Clear all WebLLM related caches
+                await clearAllModelCaches();
+                
+                // Clear saved model selection
+                localStorage.removeItem(SELECTED_MODEL_KEY);
+                updateCurrentModelDisplay(null);
+                
+                updateModelUI('not-downloaded', 'All models deleted. Click "Refresh Models" to download a new one.');
+                
+            } catch (error) {
+                console.error('Error deleting model:', error);
+                alert('Failed to delete model completely. You may need to clear your browser cache manually.');
+            }
+        }
+    }
+
+    // Comprehensive cache clearing function
+    async function clearAllModelCaches() {
+        try {
+            // Clear browser caches
+            if ('caches' in window) {
+                const cacheNames = await caches.keys();
+                for (const cacheName of cacheNames) {
+                    if (cacheName.includes('webllm') || 
+                        cacheName.includes('mlc') || 
+                        cacheName.includes('huggingface') ||
+                        cacheName.includes('model')) {
+                        await caches.delete(cacheName);
+                        console.log(`Cleared cache: ${cacheName}`);
+                    }
+                }
+            }
+
+            // Clear IndexedDB storage used by WebLLM
+            if ('indexedDB' in window) {
+                try {
+                    const databases = await indexedDB.databases();
+                    for (const db of databases) {
+                        if (db.name && (db.name.includes('webllm') || 
+                                       db.name.includes('mlc') || 
+                                       db.name.includes('model'))) {
+                            indexedDB.deleteDatabase(db.name);
+                            console.log(`Cleared IndexedDB: ${db.name}`);
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not clear IndexedDB:', e);
+                }
+            }
+
+            // Clear localStorage entries related to models
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.includes('webllm') || 
+                           key.includes('mlc') || 
+                           key.includes('model'))) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                console.log(`Cleared localStorage: ${key}`);
+            });
+
+            console.log('All model caches cleared successfully');
+            
+        } catch (error) {
+            console.error('Error clearing caches:', error);
+            throw error;
+        }
+    }
+
+    // Clear all models function
+    async function clearAllModels() {
+        if (confirm('⚠️ This will delete ALL downloaded models and clear all caches. This action cannot be undone.\n\nAre you sure you want to continue?')) {
+            try {
+                updateModelStatus('Clearing all models and caches...', 'loading');
+                
+                // Clear the current engine
+                webLLMEngine = null;
+                isModelReady = false;
+                isModelLoading = false;
+                
+                // Clear all caches
+                await clearAllModelCaches();
+                
+                // Clear saved model selection
+                localStorage.removeItem(SELECTED_MODEL_KEY);
+                updateCurrentModelDisplay(null);
+                
+                // Reset UI
+                updateModelUI('not-downloaded', 'All models cleared. Click "Refresh Models" to start fresh.');
+                modelBrowser.style.display = 'none';
+                
+                alert('✅ All models and caches have been cleared successfully!');
+                
+            } catch (error) {
+                console.error('Error clearing all models:', error);
+                updateModelStatus('❌ Failed to clear all models. Check console for details.', 'error');
+                alert('❌ Failed to clear all models. You may need to manually clear your browser data.');
+            }
+        }
+    }
+
+    // Switch to a different model
+    async function switchModel() {
+        const selectedModelId = modelSelector.value;
+        if (!selectedModelId) {
+            alert('Please select a model to switch to.');
+            return;
+        }
+
+        if (selectedModelId === loadSelectedModel()) {
+            alert('This model is already active.');
+            return;
+        }
+
+        switchModelBtn.disabled = true;
+        switchModelBtn.textContent = 'Switching...';
+
+        try {
+            // Clear current model
+            webLLMEngine = null;
+            isModelReady = false;
+            isModelLoading = true;
+
+            updateModelUI('downloading', 'Switching models...');
+            updateDownloadProgress(0, `Loading ${selectedModelId}...`);
+
+            // Import WebLLM with version fallback
+            let webllm;
+            try {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+            } catch (latestError) {
+                webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+            }
+
+            // Load the selected model
+            webLLMEngine = await webllm.CreateMLCEngine(selectedModelId, {
+                initProgressCallback: (progress) => {
+                    updateDownloadProgress(progress.progress, `Loading ${selectedModelId}...`);
+                }
+            });
+
+            isModelReady = true;
+            isModelLoading = false;
+            updateModelUI('ready', `${selectedModelId} ready! Model switched successfully.`);
+
+            // Save the new model selection
+            saveSelectedModel(selectedModelId);
+
+        } catch (error) {
+            console.error('Failed to switch model:', error);
+            isModelLoading = false;
+            updateModelUI('error', `❌ Failed to switch to ${selectedModelId}: ${error.message}`);
+        } finally {
+            switchModelBtn.disabled = false;
+            switchModelBtn.textContent = 'Switch';
+        }
+    }
+
+    function updateModelStatus(message, type = '') {
+        modelStatus.textContent = message;
+        modelStatus.className = `model-status ${type}`;
+    }
+
+    // WebLLM Functions
+    async function initializeWebLLM() {
+        if (isModelLoading || isModelReady) return;
+        
+        // If model is not ready, trigger download from profile
+        if (!isModelReady) {
+            updateModelStatus('Model not downloaded. Please download it from Settings.', 'error');
+            return;
+        }
+    }
+
+    async function analyzeWithLocalAI(brainDumpText) {
+        if (!isModelReady) {
+            throw new Error('Local AI model is not ready. Please wait for initialization or use Cloud AI.');
+        }
+
+        const prompt = `Analyze this brain dump text and extract actionable tasks, mood, and mental state. 
+
+Respond with a JSON object with exactly these keys:
+- "tasks": array of strings (each a single, concise to-do item)
+- "mood": one of these values: ${VALID_MOODS.join(', ')}
+- "mentalState": one of these values: ${VALID_MENTAL_STATES.join(', ')}
+
+Brain dump text: "${brainDumpText}"
+
+JSON response:`;
+
+        const response = await webLLMEngine.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.7,
+            max_tokens: 500
+        });
+
+        const responseText = response.choices[0].message.content;
+        
+        // Try to extract JSON from the response
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        } else {
+            throw new Error('Invalid response format from local AI');
+        }
     }
 
     // Mappings for chart data
@@ -100,7 +895,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load data from LocalStorage
     function loadData() {
         dailyData = JSON.parse(localStorage.getItem(DATA_KEY) || '{}');
-        loadApiKey(); // Load API key on startup
         renderUIForSelectedDate(); // Initial render based on today
     }
 
@@ -125,8 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function changeDate(days) {
         selectedDate.setDate(selectedDate.getDate() + days);
         renderUIForSelectedDate();
-        // Disable next day button if it's today or in the future
-        nextDayButton.disabled = selectedDate >= new Date().setHours(0, 0, 0, 0);
+        // Allow navigation to future dates - no restrictions
     }
 
     // Renders all UI components based on the selectedDate
@@ -151,8 +944,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Render Date Navigation Area
     function renderDateNavigation() {
         currentDateDisplay.textContent = formatDisplayDate(selectedDate); // Display full date
-        // Disable next day button if it's today or in the future
-        nextDayButton.disabled = selectedDate >= new Date().setHours(0, 0, 0, 0);
+        // Allow navigation to future dates - no restrictions
+        nextDayButton.disabled = false;
     }
 
     // Render Mood Display (Single Mood)
@@ -203,6 +996,8 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             saveData();
         });
+
+
     }
 
     // Render Todo Lists (Pending and Completed)
@@ -302,17 +1097,16 @@ document.addEventListener('DOMContentLoaded', () => {
         overlay.classList.remove('active');
     }
 
-    // Mock function to simulate AI analysis
+    // Main analysis function using local AI only
     async function analyzeAndAddTask() {
-        const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-        if (!apiKey) {
-            alert('Please set your OpenAI API key in the settings sidebar first.');
-            return;
-        }
-
         const brainDumpText = brainDumpInput.value.trim();
         if (brainDumpText === '') {
             alert('Brain dump is empty. Write something to analyze.');
+            return;
+        }
+
+        if (!isModelReady) {
+            alert('No AI model is loaded. Please download a model from Settings first.');
             return;
         }
 
@@ -320,44 +1114,9 @@ document.addEventListener('DOMContentLoaded', () => {
         analyzeTasksButton.textContent = 'Analyzing...';
 
         try {
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: `You are a helpful assistant that analyzes a user's "brain dump" text and extracts actionable tasks, their mood, and their mental state.
+            const result = await analyzeWithLocalAI(brainDumpText);
 
-                            Respond with a JSON object with three keys: "tasks", "mood", and "mentalState".
-                            - "tasks" should be an array of strings, where each string is a single, concise to-do item.
-                            - "mood" must be one of the following values: ${VALID_MOODS.join(', ')}.
-                            - "mentalState" must be one of the following values: ${VALID_MENTAL_STATES.join(', ')}.
-
-                            Analyze the overall sentiment and context to determine the mood and mental state. If the text provides no clear indication for mood or mental state, you can return "Neutral".`
-                        },
-                        {
-                            role: 'user',
-                            content: brainDumpText
-                        }
-                    ],
-                    response_format: { type: "json_object" }
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`OpenAI API error: ${errorData.error.message}`);
-            }
-
-            const data = await response.json();
-            const result = JSON.parse(data.choices[0].message.content);
-
-            // --- Update UI with LLM data ---
+            // --- Update UI with AI analysis results ---
             if (result.tasks && Array.isArray(result.tasks)) {
                 const dateKey = formatDateKey(selectedDate);
                 const currentData = getDataForDate(dateKey);
@@ -386,6 +1145,8 @@ document.addEventListener('DOMContentLoaded', () => {
             analyzeTasksButton.textContent = 'Analyze and Add Task';
         }
     }
+
+
 
      // Add a new todo (adds to pending list)
     function addTodo() {
@@ -820,6 +1581,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initialization ---
     loadData(); // Load all data initially
     loadDarkModePreference(); // Load and apply dark mode preference
+    
+    // Initialize model UI with saved data
+    const savedModel = loadSelectedModel();
+    const savedStatus = loadModelStatus();
+    const availableModels = loadAvailableModels();
+    
+    if (savedModel) {
+        updateCurrentModelDisplay(savedModel);
+        updateBrainDumpModelDisplay(savedModel);
+    }
+    
+    if (savedStatus) {
+        updateModelStatus(savedStatus, savedStatus.includes('ready') ? 'ready' : savedStatus.includes('❌') ? 'error' : 'loading');
+    } else {
+        updateModelStatus('Click "Get LLMs List" to see available models', '');
+    }
+    
+    if (availableModels.length > 0) {
+        updateModelSwitcher(availableModels);
+    }
+    
+    updateModelUI(savedModel && savedStatus.includes('ready') ? 'ready' : 'not-downloaded', '');
+    
+    // Try to load saved model after a short delay to let the UI initialize
+    setTimeout(() => {
+        tryLoadSavedModel();
+    }, 1000);
 
     // Initialize chart date range (e.g., last 7 days from today)
     const today = new Date();
@@ -855,8 +1643,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadDarkModePreference() {
-        // Defaults to dark mode unless 'false' is explicitly saved
-        const isDark = localStorage.getItem('darkMode') !== 'false';
+        // Defaults to light mode unless 'true' is explicitly saved
+        const isDark = localStorage.getItem('darkMode') === 'true';
         applyDarkMode(isDark);
     }
 
@@ -866,27 +1654,23 @@ document.addEventListener('DOMContentLoaded', () => {
         saveDarkModePreference(!isDarkModeEnabled);
     });
 
-    function saveApiKey() {
-        const apiKey = apiKeyInput.value.trim();
-        if (apiKey) {
-            localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
-            alert('API Key saved successfully!');
-            apiKeyInput.value = ''; // Clear input for security
-        } else {
-            alert('Please enter a valid API key.');
-        }
+    // Go to Today function
+    function goToToday() {
+        selectedDate = new Date(); // Reset to today
+        renderUIForSelectedDate();
     }
 
-    function loadApiKey() {
-        const apiKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-        if (apiKey) {
-            // We don't display the key, but we know it's there.
-            // You could optionally show a status message.
-            console.log('API Key loaded from localStorage.');
-        }
-    }
+    todayButton.addEventListener('click', goToToday);
 
-    saveApiKeyButton.addEventListener('click', saveApiKey);
+
+
+    // Model management event listeners
+    refreshModelsButton.addEventListener('click', refreshModels);
+    testConnectionButton.addEventListener('click', testConnection);
+    downloadModelButton.addEventListener('click', downloadModel);
+    deleteModelButton.addEventListener('click', deleteModel);
+    clearAllModelsButton.addEventListener('click', clearAllModels);
+    switchModelBtn.addEventListener('click', switchModel);
 
     // Sidebar event listeners
     profileButton.addEventListener('click', openSidebar);

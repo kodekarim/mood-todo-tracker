@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebLLM Model Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .model-item { margin: 10px 0; padding: 10px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>WebLLM Model Debug Tool</h1>
+    <p>This tool helps debug WebLLM model availability issues.</p>
+    
+    <button onclick="testWebLLM()">Test WebLLM Connection</button>
+    <button onclick="listModels()">List Available Models</button>
+    <button onclick="testSpecificModel()">Test Specific Model</button>
+    
+    <div id="output"></div>
+    
+    <script type="module">
+        window.testWebLLM = async function() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Testing WebLLM connection...</p>';
+            
+            try {
+                // Try latest version first
+                let webllm;
+                try {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+                    output.innerHTML += '<p class="success">✅ Loaded WebLLM latest version</p>';
+                } catch (e) {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+                    output.innerHTML += '<p class="success">✅ Loaded WebLLM v0.2.46</p>';
+                }
+                
+                output.innerHTML += '<p>Available WebLLM properties:</p>';
+                output.innerHTML += '<ul>' + Object.keys(webllm).map(key => `<li>${key}</li>`).join('') + '</ul>';
+                
+                if (webllm.CreateMLCEngine) {
+                    output.innerHTML += '<p class="success">✅ CreateMLCEngine found</p>';
+                } else {
+                    output.innerHTML += '<p class="error">❌ CreateMLCEngine not found</p>';
+                }
+                
+            } catch (error) {
+                output.innerHTML += `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        };
+        
+        window.listModels = async function() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<p>Fetching available models...</p>';
+            
+            try {
+                let webllm;
+                try {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+                } catch (e) {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+                }
+                
+                if (webllm.prebuiltAppConfig && webllm.prebuiltAppConfig.model_list) {
+                    const models = webllm.prebuiltAppConfig.model_list;
+                    output.innerHTML = `<p class="success">Found ${models.length} models:</p>`;
+                    
+                    models.slice(0, 20).forEach(model => {
+                        output.innerHTML += `<div class="model-item">
+                            <strong>${model.model_id || model.model || 'Unknown'}</strong><br>
+                            <small>Size: ${model.model_lib_url ? 'Available' : 'Unknown'}</small>
+                        </div>`;
+                    });
+                    
+                    if (models.length > 20) {
+                        output.innerHTML += `<p>... and ${models.length - 20} more models</p>`;
+                    }
+                    
+                } else {
+                    output.innerHTML += '<p class="error">❌ No model list found in prebuiltAppConfig</p>';
+                    
+                    if (webllm.ModelRecord) {
+                        const modelKeys = Object.keys(webllm.ModelRecord);
+                        output.innerHTML += `<p>Found ModelRecord with ${modelKeys.length} entries:</p>`;
+                        modelKeys.slice(0, 10).forEach(key => {
+                            output.innerHTML += `<div class="model-item">${key}</div>`;
+                        });
+                    }
+                }
+                
+            } catch (error) {
+                output.innerHTML += `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        };
+        
+        window.testSpecificModel = async function() {
+            const modelId = prompt('Enter model ID to test:', 'Llama-2-7b-chat-hf-q4f32_1');
+            if (!modelId) return;
+            
+            const output = document.getElementById('output');
+            output.innerHTML = `<p>Testing model: ${modelId}</p>`;
+            
+            try {
+                let webllm;
+                try {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@latest/lib/index.js');
+                } catch (e) {
+                    webllm = await import('https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.46/lib/index.js');
+                }
+                
+                output.innerHTML += '<p>Attempting to create engine (this may take a while)...</p>';
+                
+                const engine = await webllm.CreateMLCEngine(modelId, {
+                    initProgressCallback: (progress) => {
+                        output.innerHTML = `<p>Loading: ${Math.round(progress.progress * 100)}%</p>`;
+                    }
+                });
+                
+                output.innerHTML += `<p class="success">✅ Successfully loaded ${modelId}!</p>`;
+                
+                // Test a simple completion
+                const response = await engine.chat.completions.create({
+                    messages: [{ role: "user", content: "Hello!" }],
+                    max_tokens: 10
+                });
+                
+                output.innerHTML += `<p class="success">✅ Test completion: ${response.choices[0].message.content}</p>`;
+                
+            } catch (error) {
+                output.innerHTML += `<p class="error">❌ Failed to load ${modelId}: ${error.message}</p>`;
+                console.error('Model test error:', error);
+            }
+        };
+    </script>
+</body>
+</html>

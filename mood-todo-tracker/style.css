@@ -1,20 +1,20 @@
 :root {
     --font-sans: 'Sora', sans-serif;
 
-    /* Black Theme Palette */
-    --background: #000000;
+    /* Light Theme Palette */
+    --background: #ffffff;
     --background-image: none;
-    --surface: #121212;
+    --surface: #f8f9fa;
     --primary: #8a7cff; 
     --primary-hover: #a39bff;
     --secondary: #6c757d;
     --danger: #e53e3e;
     --danger-hover: #c53030;
-    --text-primary: #e0e0e0;
-    --text-secondary: #a0a0a0;
-    --text-tertiary: #718096;
-    --border-color: #2a2a2a;
-    --selected-bg: rgba(138, 124, 255, 0.2);
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-tertiary: #6c757d;
+    --border-color: #dee2e6;
+    --selected-bg: rgba(138, 124, 255, 0.1);
 
     /* Universal Variables */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -176,7 +176,7 @@ input[type="text"], input[type="password"], textarea {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
-    background-color: #1f1f1f;
+    background-color: var(--surface);
     color: var(--text-primary);
     box-sizing: border-box;
     font-family: var(--font-sans);
@@ -184,7 +184,8 @@ input[type="text"], input[type="password"], textarea {
 input:focus, textarea:focus {
     outline: 2px solid var(--primary);
     outline-offset: 2px;
-    background-color: #222222;
+    background-color: var(--surface);
+    border-color: var(--primary);
 }
 
 /* --- Specific Component Redesign --- */
@@ -418,7 +419,7 @@ button:active {
 /* Keeping old styles that are still needed for now, and will prune later */
 .sidebar {
     height: 100%;
-    width: 300px;
+    width: 450px; /* Increased width for better LLM management visibility */
     position: fixed;
     top: 0;
     right: 0; /* Keep it aligned to the right */
@@ -510,6 +511,370 @@ button:active {
     flex-grow: 1; /* Allow textarea to fill available space */
     resize: none; /* Disable manual resizing */
     min-height: 120px; /* Ensure it's large enough for notes */
+}
+
+/* --- Model Management UI --- */
+.model-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.model-status-card {
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.model-status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.model-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.status-badge.not-downloaded {
+    background-color: var(--secondary);
+    color: white;
+}
+
+.status-badge.downloading {
+    background-color: var(--primary);
+    color: white;
+}
+
+.status-badge.ready {
+    background-color: #10b981;
+    color: white;
+}
+
+.status-badge.error {
+    background-color: var(--danger);
+    color: white;
+}
+
+.model-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.875rem;
+}
+
+.detail-row span:first-child {
+    color: var(--text-secondary);
+}
+
+.detail-row span:last-child {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.download-progress {
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: var(--border-color);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--primary);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.progress-text span:first-child {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.progress-text span:last-child {
+    color: var(--text-secondary);
+}
+
+.model-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.download-btn, .delete-btn, .test-btn, .refresh-btn, .clear-all-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.download-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+}
+
+.download-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.download-btn:disabled {
+    background-color: var(--secondary);
+    cursor: not-allowed;
+}
+
+.delete-btn {
+    background-color: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+.delete-btn:hover {
+    background-color: var(--danger);
+    color: white;
+}
+
+.test-btn {
+    background-color: transparent;
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+
+.test-btn:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.refresh-btn {
+    background-color: transparent;
+    color: var(--secondary);
+    border: 1px solid var(--secondary);
+}
+
+.refresh-btn:hover {
+    background-color: var(--secondary);
+    color: white;
+}
+
+.clear-all-btn {
+    background-color: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+.clear-all-btn:hover {
+    background-color: var(--danger);
+    color: white;
+}
+
+/* --- Model Browser --- */
+.model-browser {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.model-browser h4 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.model-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background-color: var(--background);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    transition: border-color 0.2s ease;
+}
+
+.model-item:hover {
+    border-color: var(--primary);
+}
+
+.model-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.model-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.model-details {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.model-size {
+    font-weight: 500;
+}
+
+.model-download-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.model-download-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.model-download-btn:disabled {
+    background-color: var(--secondary);
+    cursor: not-allowed;
+}
+
+/* --- Model Switch Section --- */
+.model-switch-section {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.model-switch-section label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.model-selector {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.switch-model-btn {
+    width: 100%;
+    padding: 0.5rem;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.switch-model-btn:hover {
+    background-color: var(--primary-hover);
+}
+
+.switch-model-btn:disabled {
+    background-color: var(--secondary);
+    cursor: not-allowed;
+}
+
+/* --- Brain Dump Controls --- */
+.brain-dump-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.brain-dump-model-info {
+    margin-top: 0.5rem;
+    text-align: right;
+}
+
+#brain-dump-model-display {
+    color: var(--text-tertiary);
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.model-status {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    min-height: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.model-status.loading {
+    color: var(--primary);
+}
+
+.model-status.ready {
+    color: #10b981;
+}
+
+.model-status.error {
+    color: var(--danger);
 }
 
 /* --- Responsive Design --- */

@@ -1,0 +1,3 @@
+# Ignore all model files (they're large)
+*
+!.gitignore
