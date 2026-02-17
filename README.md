@@ -1,24 +1,28 @@
-# Daily Tracker Web App
+# Todo Tracker
 
-A simple web application to track your daily todos, mood, mental state, and notes.
+Mood & Todo Tracker - Privacy-Focused Daily Productivity App with Local AI
 
-## Features
+🎯 A comprehensive daily productivity and mood tracking web application with privacy-first local AI capabilities. Track your todos, mood, mental state, and thoughts all in one place - completely offline and private.
 
-*   Navigate through days using top navigation or calendar view.
-*   Add, complete (move to completed list), and delete daily todo items for the selected date.
-*   Track daily Mood (Angry, Sad, Neutral, Happy, Excited) using buttons.
-*   Track daily Mental State (Sick, Meh, Neutral, Focused) using buttons.
-*   Write and save free-form notes for the selected day.
-*   Visualize daily trends (Completed Tasks, Total Tasks, Mood, Mental State) on a dashboard graph.
-*   Customize the date range displayed on the graph.
-*   View a calendar showing which days have logged activity.
-*   Data is saved locally in your browser's `localStorage`.
-*   Export all tracked data to a JSON file.
-*   Import data from a previously exported JSON file (overwrites existing data).
+✨ Features:
+• 📝 Todo Management - Add, complete, and organize daily tasks with pending/completed lists
+• 😊 Mood Tracking - Log daily mood (Angry, Sad, Neutral, Happy, Excited)
+• 🧠 Mental State Monitoring - Track your mental state (Sick, Overthinking, Neutral, Focused)
+• 🎤 Voice Recording - Speak your thoughts directly into the brain dump section with real-time transcription
+• 🤖 Local AI Analysis - Use WebLLM to analyze brain dumps and automatically extract tasks, mood, and mental state (100% private, runs locally)
+• 📊 Interactive Dashboard - Visualize trends with customizable date ranges and charts
+• 📅 Calendar View - Navigate through days and see activity at a glance
+• 🌙 Dark Mode - Comfortable viewing in any lighting condition
+• 💾 Data Export/Import - Backup and restore your data as JSON
+• 🔒 Privacy-First - All data stored locally in your browser, no cloud services required
+
+🚀 Tech Stack: Vanilla JavaScript, WebLLM, Chart.js, Web Speech API
+
+Perfect for anyone looking to track their daily productivity and mental well-being while maintaining complete privacy and control over their data.
 
 ## How to Run
 
 1.  Clone or download this repository.
 2.  Open the `index.html` file in your web browser.
 
-No server setup is required as it's a frontend-only application. 
+No server setup is required.
