@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const brainDumpInput = document.getElementById('brain-dump-input');
     const analyzeTasksButton = document.getElementById('analyze-tasks');
     const brainDumpModelDisplay = document.getElementById('brain-dump-model-display');
+    const voiceRecordBtn = document.getElementById('voice-record-btn');
     const currentActiveModel = document.getElementById('current-active-model');
     const modelSwitchSection = document.getElementById('model-switch-section');
     const modelSelector = document.getElementById('model-selector');
@@ -89,6 +90,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let webLLMEngine = null;
     let isModelLoading = false;
     let isModelReady = false;
+    
+    // Voice Recognition State
+    let recognition = null;
+    let isRecording = false;
 
     // --- LocalStorage Keys ---
     const DATA_KEY = 'dailyTracker_data'; // Single key for all data
@@ -971,6 +976,117 @@ JSON response:`;
         autoResizeTextarea(brainDumpInput);
     }
 
+    // Initialize Speech Recognition
+    function initializeSpeechRecognition() {
+        // Check if browser supports speech recognition
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            voiceRecordBtn.style.display = 'none'; // Hide button if not supported
+            return false;
+        }
+        
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+        
+        recognition.onstart = () => {
+            isRecording = true;
+            voiceRecordBtn.classList.add('recording');
+            voiceRecordBtn.title = 'Recording... Click to stop';
+        };
+        
+        recognition.onresult = (event) => {
+            let interimTranscript = '';
+            let finalTranscript = '';
+            
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript + ' ';
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+            
+            // Update textarea with current text + new transcription
+            const currentText = brainDumpInput.value;
+            const newText = currentText + finalTranscript;
+            brainDumpInput.value = newText;
+            autoResizeTextarea(brainDumpInput);
+            
+            // Save to data
+            const dateKey = formatDateKey(selectedDate);
+            dailyData[dateKey] = {
+                ...getDataForDate(dateKey),
+                brainDump: newText,
+            };
+            saveData();
+        };
+        
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            stopRecording();
+            
+            if (event.error === 'no-speech') {
+                alert('No speech detected. Please try again.');
+            } else if (event.error === 'not-allowed') {
+                alert('Microphone permission denied. Please enable microphone access in your browser settings.');
+            } else {
+                alert('Speech recognition error: ' + event.error);
+            }
+        };
+        
+        recognition.onend = () => {
+            stopRecording();
+        };
+        
+        return true;
+    }
+    
+    // Start voice recording
+    function startRecording() {
+        if (!recognition) {
+            if (!initializeSpeechRecognition()) {
+                alert('Speech recognition is not supported in your browser.');
+                return;
+            }
+        }
+        
+        try {
+            recognition.start();
+        } catch (error) {
+            console.error('Error starting recognition:', error);
+            // If already started, stop and restart
+            if (isRecording) {
+                stopRecording();
+                setTimeout(() => {
+                    recognition.start();
+                }, 100);
+            }
+        }
+    }
+    
+    // Stop voice recording
+    function stopRecording() {
+        if (recognition && isRecording) {
+            recognition.stop();
+            isRecording = false;
+            voiceRecordBtn.classList.remove('recording');
+            voiceRecordBtn.title = 'Record Voice';
+        }
+    }
+    
+    // Toggle voice recording
+    function toggleVoiceRecording() {
+        if (isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    }
+
     // Helper to update selected class on buttons (generalized)
     function updateButtonSelection(optionsContainer, buttonSelector, dataAttribute, selectedValue) {
         const buttons = optionsContainer.querySelectorAll(buttonSelector);
@@ -981,23 +1097,6 @@ JSON response:`;
                 button.classList.remove('selected');
             }
         });
-
-        // Auto-resize on input
-        brainDumpInput.addEventListener('input', () => {
-            autoResizeTextarea(brainDumpInput);
-        });
-
-        // Save brain dump on blur
-        brainDumpInput.addEventListener('blur', () => {
-            const dateKey = formatDateKey(selectedDate);
-            dailyData[dateKey] = {
-                ...getDataForDate(dateKey),
-                brainDump: brainDumpInput.value,
-            };
-            saveData();
-        });
-
-
     }
 
     // Render Todo Lists (Pending and Completed)
@@ -1475,6 +1574,23 @@ JSON response:`;
             updateDataForSelectedDate({ notes: notesTextarea.value });
             // No need to re-render anything else on note change
         });
+        
+        // Brain Dump Listeners
+        brainDumpInput.addEventListener('input', () => {
+            autoResizeTextarea(brainDumpInput);
+        });
+
+        brainDumpInput.addEventListener('blur', () => {
+            const dateKey = formatDateKey(selectedDate);
+            dailyData[dateKey] = {
+                ...getDataForDate(dateKey),
+                brainDump: brainDumpInput.value,
+            };
+            saveData();
+        });
+        
+        // Voice Recording Listener
+        voiceRecordBtn.addEventListener('click', toggleVoiceRecording);
 
         // Calendar Navigation Listeners (Add back)
         prevMonthButton.addEventListener('click', () => changeCalendarMonth(-1));
@@ -1581,6 +1697,9 @@ JSON response:`;
     // --- Initialization ---
     loadData(); // Load all data initially
     loadDarkModePreference(); // Load and apply dark mode preference
+    
+    // Initialize speech recognition
+    initializeSpeechRecognition();
     
     // Initialize model UI with saved data
     const savedModel = loadSelectedModel();

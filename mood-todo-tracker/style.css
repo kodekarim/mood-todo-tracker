@@ -833,6 +833,61 @@ button:active {
     cursor: not-allowed;
 }
 
+/* --- Brain Dump Wrapper --- */
+.brain-dump-wrapper {
+    position: relative;
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.brain-dump-wrapper textarea {
+    flex: 1;
+}
+
+.voice-btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.5rem;
+    width: 40px;
+    height: 40px;
+    background-color: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    align-self: flex-start;
+}
+
+.voice-btn:hover {
+    background-color: var(--selected-bg);
+    border-color: var(--primary);
+}
+
+.voice-btn.recording {
+    background-color: var(--danger);
+    color: white;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.voice-btn.recording svg {
+    color: white;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
 /* --- Brain Dump Controls --- */
 .brain-dump-controls {
     display: flex;
